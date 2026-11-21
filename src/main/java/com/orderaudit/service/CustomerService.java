@@ -11,9 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerService {
 
     private final CustomerRepository repository;
+    private final AuditService audit;
 
-    public CustomerService(CustomerRepository repository) {
+    public CustomerService(CustomerRepository repository, AuditService audit) {
         this.repository = repository;
+        this.audit = audit;
     }
 
     @Transactional
@@ -29,7 +31,10 @@ public class CustomerService {
         if (cleanGstin != null && repository.existsByGstin(cleanGstin)) {
             throw new DuplicatePartyException("GSTIN", cleanGstin);
         }
-        return repository.save(new Customer(cleanName, cleanGstin, cleanState, cleanAddress));
+        Customer saved = repository.save(new Customer(cleanName, cleanGstin, cleanState, cleanAddress));
+        audit.record(com.orderaudit.security.CurrentUser.name(), "CUSTOMER_CREATED", "CUSTOMER", saved.getId(),
+                cleanName + " (state " + cleanState + ")");
+        return saved;
     }
 
     @Transactional(readOnly = true)

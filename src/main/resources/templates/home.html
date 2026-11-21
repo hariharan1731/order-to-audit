@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Home')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <div class="welcome mb-4">
+    <h1 class="h3 mb-1">Welcome, <span th:text="${nav.username}">user</span></h1>
+    <div class="role">Order to Audit: from purchase to payment, every step recorded.</div>
+  </div>
+  <div class="row g-3">
+    <div class="col-6 col-md-4" th:if="${nav.sales}"><a class="tile" th:href="@{/sales/orders/new}">
+      <div class="card h-100"><div class="card-body"><div class="icon">&#128722;</div>
+        <h2 class="h5 mt-2">New order</h2><p class="text-muted mb-0">Place an order for a customer.</p></div></div></a></div>
+    <div class="col-6 col-md-4" th:if="${nav.sales}"><a class="tile" th:href="@{/sales/orders}">
+      <div class="card h-100"><div class="card-body"><div class="icon">&#128203;</div>
+        <h2 class="h5 mt-2">My orders</h2><p class="text-muted mb-0">Follow your orders.</p></div></div></a></div>
+    <div class="col-6 col-md-4" th:if="${nav.admin}"><a class="tile" th:href="@{/admin/orders}">
+      <div class="card h-100"><div class="card-body"><div class="icon">&#9989;</div>
+        <h2 class="h5 mt-2">Order desk</h2><p class="text-muted mb-0">Approve, invoice and dispatch.</p></div></div></a></div>
+    <div class="col-6 col-md-4" th:if="${nav.admin}"><a class="tile" th:href="@{/admin/payments}">
+      <div class="card h-100"><div class="card-body"><div class="icon">&#128176;</div>
+        <h2 class="h5 mt-2">Payments</h2><p class="text-muted mb-0">Who owes what; record money in.</p></div></div></a></div>
+    <div class="col-6 col-md-4" th:if="${nav.production}"><a class="tile" th:href="@{/production}">
+      <div class="card h-100"><div class="card-body"><div class="icon">&#127981;</div>
+        <h2 class="h5 mt-2">Production</h2><p class="text-muted mb-0">Plan and record production runs.</p></div></div></a></div>
+    <div class="col-6 col-md-4" th:if="${nav.stock}"><a class="tile" th:href="@{/stock}">
+      <div class="card h-100"><div class="card-body"><div class="icon">&#128230;</div>
+        <h2 class="h5 mt-2">Stock</h2><p class="text-muted mb-0">What is in the store right now.</p></div></div></a></div>
+    <div class="col-6 col-md-4" th:if="${nav.reports}"><a class="tile" th:href="@{/reports}">
+      <div class="card h-100"><div class="card-body"><div class="icon">&#128202;</div>
+        <h2 class="h5 mt-2">Reports</h2><p class="text-muted mb-0">Registers, GST, costing, ageing. Export to CSV, Excel, PDF.</p></div></div></a></div>
+    <div class="col-6 col-md-4" th:if="${nav.owner}"><a class="tile" th:href="@{/owner}">
+      <div class="card h-100"><div class="card-body"><div class="icon">&#128200;</div>
+        <h2 class="h5 mt-2">Owner dashboard</h2><p class="text-muted mb-0">Sales, dues, stock and alerts at a glance.</p></div></div></a></div>
+  </div>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

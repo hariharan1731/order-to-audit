@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Order desk')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <h1 class="h4 mb-3">Order desk</h1>
+
+  <h2 class="h5 mt-3">To approve <span class="badge bg-secondary" th:text="${#lists.size(toApprove)}">0</span></h2>
+  <div th:replace="~{admin/order-table :: orderTable(${toApprove})}"></div>
+
+  <h2 class="h5 mt-4">To invoice <span class="badge bg-secondary" th:text="${#lists.size(toInvoice)}">0</span></h2>
+  <div th:replace="~{admin/order-table :: orderTable(${toInvoice})}"></div>
+
+  <h2 class="h5 mt-4">To dispatch <span class="badge bg-secondary" th:text="${#lists.size(toDispatch)}">0</span></h2>
+  <div th:replace="~{admin/order-table :: orderTable(${toDispatch})}"></div>
+</div>
+
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

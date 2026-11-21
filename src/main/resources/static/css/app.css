@@ -1,0 +1,32 @@
+/* Small touches on top of Bootstrap. Mobile first: big tap targets for the salesman's phone. */
+body { background: #f6f7f9; }
+.navbar-brand { font-weight: 700; letter-spacing: .3px; }
+.card { border: 0; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); }
+.qty-input { font-size: 1.25rem; text-align: center; min-height: 3rem; }
+.btn-lg-touch { min-height: 3rem; font-size: 1.1rem; }
+.status-SUBMITTED { background: #ffc107; color: #000; }
+.status-APPROVED { background: #0d6efd; }
+.status-INVOICED { background: #6f42c1; }
+.status-DISPATCHED { background: #198754; }
+.status-REJECTED { background: #dc3545; }
+.money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Polish */
+.navbar.bg-dark { background: linear-gradient(90deg, #1b2a49, #2c4a7c) !important; }
+.card { border-radius: .75rem; }
+.kpi { border-left: 4px solid #adb5bd; transition: transform .12s ease, box-shadow .12s ease; }
+.kpi:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0, 0, 0, .12); }
+.kpi-primary { border-left-color: #0d6efd; }
+.kpi-success { border-left-color: #198754; }
+.kpi-warning { border-left-color: #ffc107; }
+.kpi-danger { border-left-color: #dc3545; }
+.kpi-info { border-left-color: #0dcaf0; }
+.kpi-secondary { border-left-color: #6c757d; }
+.chart-box { position: relative; height: 260px; }
+.welcome { background: linear-gradient(135deg, #1b2a49, #3b6ea5); color: #fff; border-radius: .75rem; padding: 1.5rem; }
+.welcome .role { opacity: .8; }
+.tile { text-decoration: none; color: inherit; }
+.tile .card { transition: transform .12s ease, box-shadow .12s ease; }
+.tile:hover .card { transform: translateY(-3px); box-shadow: 0 6px 14px rgba(0, 0, 0, .15); }
+.tile .icon { font-size: 2rem; }
+.table thead th { background: #eef1f6; }

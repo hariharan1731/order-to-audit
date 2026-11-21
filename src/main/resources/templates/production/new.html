@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('New production run')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <h1 class="h4 mb-3">New production run</h1>
+  <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+  <form class="card p-3 mb-3" method="get" th:action="@{/production/new}">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label" for="packConfigId">Product and pack size</label>
+        <select class="form-select" id="packConfigId" name="packConfigId">
+          <option th:each="o : ${options}" th:value="${o.packConfigId}"
+                  th:selected="${selected != null and selected == o.packConfigId}"
+                  th:text="${o.productName} + ' (' + ${o.packSizeGrams} + ' g)'">Murukku (200 g)</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="batches">Batches</label>
+        <input class="form-control" id="batches" name="batches" th:value="${batches}">
+      </div>
+      <div class="col-md-4"><button class="btn btn-outline-primary" id="show-plan" type="submit">Show plan</button></div>
+    </div>
+  </form>
+
+  <form th:if="${plan != null}" class="card p-3" method="post" th:action="@{/production/runs}">
+    <input type="hidden" name="packConfigId" th:value="${plan.packConfigId}">
+    <input type="hidden" name="batches" th:value="${plan.batches}">
+    <h2 class="h6">Plan for <span th:text="${plan.product}">Murukku</span>:
+      expect <strong th:text="${plan.expectedPackets}">200</strong> packets</h2>
+    <p class="text-muted small">Type what was really used. Leave a box empty if it was used exactly as planned.</p>
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead><tr><th>Material</th><th class="text-end">Planned</th><th style="width:220px">Actually used</th></tr></thead>
+        <tbody>
+          <tr th:each="l : ${plan.lines}">
+            <td th:text="${l.name}">Flour</td>
+            <td class="text-end" th:text="${l.plannedReadable}">40 kg</td>
+            <td>
+              <input type="hidden" name="itemId" th:value="${l.itemId}">
+              <div class="input-group">
+                <input class="form-control" name="actual" th:id="'actual-' + ${l.itemId}" th:value="${l.plannedInput}">
+                <span class="input-group-text" th:text="${l.unitLabel}">kg</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-3"><label class="form-label" for="runDate">Run date</label>
+        <input class="form-control" type="date" id="runDate" name="runDate" th:value="${today}"></div>
+      <div class="col-md-3"><label class="form-label" for="goodPackets">Good packets</label>
+        <input class="form-control" type="number" min="0" id="goodPackets" name="goodPackets" required></div>
+      <div class="col-md-3"><label class="form-label" for="damagedPouches">Damaged pouches</label>
+        <input class="form-control" type="number" min="0" id="damagedPouches" name="damagedPouches" value="0" required></div>
+    </div>
+    <h3 class="h6 mt-3">Overheads (Rs)</h3>
+    <div class="row g-3">
+      <div class="col-md-3"><label class="form-label" for="labour">Labour</label>
+        <input class="form-control" id="labour" name="labour"></div>
+      <div class="col-md-3"><label class="form-label" for="gasPower">Gas and power</label>
+        <input class="form-control" id="gasPower" name="gasPower"></div>
+      <div class="col-md-3"><label class="form-label" for="otherDescription">Other (what)</label>
+        <input class="form-control" id="otherDescription" name="otherDescription"></div>
+      <div class="col-md-3"><label class="form-label" for="otherAmount">Other (Rs)</label>
+        <input class="form-control" id="otherAmount" name="otherAmount"></div>
+    </div>
+    <div class="mt-3"><button class="btn btn-primary" id="post-run" type="submit">Post run</button></div>
+  </form>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

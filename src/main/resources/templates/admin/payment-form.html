@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Record payment')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <h1 class="h4 mb-1" th:text="${customer.name}">Retailer A</h1>
+  <p class="text-muted">Outstanding: <strong class="money" th:text="${@fmt.rupees(owed)}">Rs 3,875.00</strong></p>
+  <div class="table-responsive card p-2 mb-3" th:unless="${#lists.isEmpty(open)}">
+    <table class="table mb-0">
+      <thead><tr><th>Invoice</th><th>Date</th><th class="text-end">Total</th><th class="text-end">Paid</th><th class="text-end">Outstanding</th></tr></thead>
+      <tbody>
+        <tr th:each="i : ${open}">
+          <td th:text="${i.invoiceNumber}">INV</td><td th:text="${@fmt.date(i.invoiceDate)}">date</td>
+          <td class="text-end money" th:text="${@fmt.rupees(i.totalPaise)}">x</td>
+          <td class="text-end money" th:text="${@fmt.rupees(i.paidPaise)}">x</td>
+          <td class="text-end money" th:text="${@fmt.rupees(i.outstandingPaise)}">x</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <form th:action="@{/admin/payments/customers/{id}(id=${customer.id})}" method="post" class="card p-3" th:unless="${#lists.isEmpty(open)}">
+    <div class="row g-3">
+      <div class="col-12 col-md-3"><label class="form-label">Amount (Rs)</label>
+        <input type="number" name="amountRupees" class="form-control form-control-lg" min="0.01" step="0.01" required></div>
+      <div class="col-6 col-md-3"><label class="form-label">Method</label>
+        <select name="method" class="form-select form-select-lg"><option th:each="m : ${methods}" th:value="${m}" th:text="${m}">CASH</option></select></div>
+      <div class="col-6 col-md-3"><label class="form-label">Date</label>
+        <input type="date" name="paymentDate" class="form-control form-control-lg" th:value="${today}" required></div>
+      <div class="col-12 col-md-3"><label class="form-label">Reference</label>
+        <input name="reference" class="form-control form-control-lg" maxlength="60" placeholder="UPI ref / cheque no"></div>
+    </div>
+    <p class="small text-muted mt-2 mb-3">The amount is applied to the oldest unpaid invoices first.</p>
+    <button class="btn btn-primary btn-lg-touch" type="submit">Record payment</button>
+  </form>
+  <a class="btn btn-link mt-2" th:href="@{/admin/payments}">&larr; Payments</a>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

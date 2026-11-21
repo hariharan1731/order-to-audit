@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Recipes and packs')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <h1 class="h4 mb-3">Recipes and packs</h1>
+  <p class="text-muted">One recipe makes a bulk batch; each pack configuration says how that bulk is packed and which packaging it uses.
+    These drive the production plan and the costing.</p>
+  <div class="card p-3 mb-3 recipe-card" th:each="r : ${recipes}">
+    <h2 class="h5" th:text="${r.name}">Murukku base</h2>
+    <div class="text-muted small mb-2">Batch makes <strong th:text="${r.batchYield}">40 kg</strong> &middot; variance tolerance
+      <strong th:text="${r.tolerance}">3%</strong></div>
+    <table class="table table-sm w-auto">
+      <thead><tr><th>Ingredient</th><th class="text-end">Per batch</th></tr></thead>
+      <tbody><tr th:each="i : ${r.ingredients}"><td th:text="${i.name}">Flour</td><td class="text-end" th:text="${i.quantity}">40 kg</td></tr></tbody>
+    </table>
+    <div th:each="p : ${r.packs}" class="border-top pt-2">
+      <strong th:text="${p.product}">Murukku 200 g</strong>:
+      <span th:text="${p.packSizeGrams} + ' g packets, ' + ${p.packetsPerCarton} + ' per carton'">200 g</span>
+      <ul class="mb-0"><li th:each="x : ${p.packaging}" th:text="${x}">1 x Pouch per packet</li></ul>
+    </div>
+  </div>
+  <p class="text-muted" th:if="${#lists.isEmpty(recipes)}">No recipes yet.</p>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

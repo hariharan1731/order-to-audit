@@ -11,9 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class SupplierService {
 
     private final SupplierRepository repository;
+    private final AuditService audit;
 
-    public SupplierService(SupplierRepository repository) {
+    public SupplierService(SupplierRepository repository, AuditService audit) {
         this.repository = repository;
+        this.audit = audit;
     }
 
     @Transactional
@@ -29,7 +31,10 @@ public class SupplierService {
         if (cleanGstin != null && repository.existsByGstin(cleanGstin)) {
             throw new DuplicatePartyException("GSTIN", cleanGstin);
         }
-        return repository.save(new Supplier(cleanName, cleanGstin, cleanState, cleanAddress));
+        Supplier saved = repository.save(new Supplier(cleanName, cleanGstin, cleanState, cleanAddress));
+        audit.record(com.orderaudit.security.CurrentUser.name(), "SUPPLIER_CREATED", "SUPPLIER", saved.getId(),
+                cleanName + " (state " + cleanState + ")");
+        return saved;
     }
 
     @Transactional(readOnly = true)

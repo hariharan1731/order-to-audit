@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Customers')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <h1 class="h4 mb-3">Customers</h1>
+  <div class="table-responsive card p-2 mb-4">
+    <table class="table mb-0">
+      <thead><tr><th>Name</th><th>GSTIN</th><th>State</th><th>Address</th></tr></thead>
+      <tbody><tr th:each="c : ${customers}">
+        <td th:text="${c.name}">Retailer A</td>
+        <td th:text="${c.gstin != null} ? ${c.gstin} : '-'">-</td>
+        <td th:text="${c.stateCode}">33</td>
+        <td th:text="${c.address}">address</td>
+      </tr></tbody>
+    </table>
+  </div>
+  <form th:action="@{/admin/customers}" method="post" class="card p-3">
+    <h2 class="h6">Add a customer</h2>
+    <div class="row g-2">
+      <div class="col-12 col-md-4"><label class="form-label small">Name</label><input name="name" class="form-control" required maxlength="150"></div>
+      <div class="col-6 col-md-3"><label class="form-label small">GSTIN (optional)</label><input name="gstin" class="form-control" maxlength="15"></div>
+      <div class="col-6 col-md-2"><label class="form-label small">State code</label><input name="stateCode" class="form-control" required maxlength="2" placeholder="33"></div>
+      <div class="col-12 col-md-3"><label class="form-label small">Address</label><input name="address" class="form-control" maxlength="300"></div>
+    </div>
+    <button class="btn btn-primary mt-3 align-self-start" type="submit">Add customer</button>
+  </form>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

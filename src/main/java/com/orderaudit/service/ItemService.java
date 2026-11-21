@@ -20,10 +20,12 @@ public class ItemService {
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     private final ItemRepository repository;
+    private final AuditService audit;
 
     // Spring passes the repository in here (constructor injection).
-    public ItemService(ItemRepository repository) {
+    public ItemService(ItemRepository repository, AuditService audit) {
         this.repository = repository;
+        this.audit = audit;
     }
 
     @Transactional // all-or-nothing: if anything throws, nothing is saved
@@ -52,7 +54,10 @@ public class ItemService {
         if (repository.existsByNameIgnoreCase(cleanName)) {
             throw new DuplicateItemException(cleanName);
         }
-        return repository.save(new Item(cleanName, type, baseUnit, cleanHsn, gstRatePercent));
+        Item saved = repository.save(new Item(cleanName, type, baseUnit, cleanHsn, gstRatePercent));
+        audit.record(com.orderaudit.security.CurrentUser.name(), "ITEM_CREATED", "ITEM", saved.getId(),
+                cleanName + " (" + type + ", " + baseUnit + ", GST " + gstRatePercent.stripTrailingZeros().toPlainString() + "%)");
+        return saved;
     }
 
     @Transactional(readOnly = true)

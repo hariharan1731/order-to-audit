@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Items')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <h1 class="h4 mb-3">Items</h1>
+  <div class="table-responsive card p-2 mb-4">
+    <table class="table table-hover mb-0 align-middle" id="item-table">
+      <thead><tr><th>Name</th><th>Type</th><th>Base unit</th><th>HSN</th><th class="text-end">GST %</th><th>Status</th></tr></thead>
+      <tbody><tr th:each="i : ${items}">
+        <td th:text="${i.name}">Flour</td>
+        <td><span class="badge bg-light text-dark" th:text="${i.itemType}">RAW</span></td>
+        <td th:text="${i.baseUnit}">GRAM</td>
+        <td th:text="${i.hsnCode != null} ? ${i.hsnCode} : '-'">-</td>
+        <td class="text-end" th:text="${i.gstRatePercent.stripTrailingZeros().toPlainString()}">5</td>
+        <td><span class="badge" th:classappend="${i.active} ? 'bg-success' : 'bg-secondary'" th:text="${i.active} ? 'Active' : 'Inactive'">Active</span></td>
+      </tr></tbody>
+    </table>
+  </div>
+  <h2 class="h5">Add an item</h2>
+  <p class="text-muted small">Raw materials use grams or millilitres, packaging uses pieces, finished products use packets.
+    Stock is kept in these base units; screens show kg and litres.</p>
+  <form th:action="@{/admin/items}" method="post" class="card p-3">
+    <div class="row g-3">
+      <div class="col-12 col-md-4"><label class="form-label" for="name">Name</label><input class="form-control" id="name" name="name" required></div>
+      <div class="col-6 col-md-2"><label class="form-label" for="type">Type</label>
+        <select class="form-select" id="type" name="type"><option th:each="t : ${types}" th:value="${t}" th:text="${t}">RAW</option></select></div>
+      <div class="col-6 col-md-2"><label class="form-label" for="baseUnit">Base unit</label>
+        <select class="form-select" id="baseUnit" name="baseUnit"><option th:each="u : ${units}" th:value="${u}" th:text="${u}">GRAM</option></select></div>
+      <div class="col-6 col-md-2"><label class="form-label" for="hsnCode">HSN (optional)</label><input class="form-control" id="hsnCode" name="hsnCode"></div>
+      <div class="col-6 col-md-2"><label class="form-label" for="gstRate">GST %</label><input class="form-control" id="gstRate" name="gstRate" value="0" required></div>
+    </div>
+    <div class="mt-3"><button class="btn btn-primary" id="add-item" type="submit">Add item</button></div>
+  </form>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

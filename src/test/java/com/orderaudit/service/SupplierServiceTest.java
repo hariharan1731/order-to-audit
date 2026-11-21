@@ -24,6 +24,10 @@ class SupplierServiceTest {
     @Mock
     SupplierRepository repository;
 
+    // The service records an audit row on every create; without this mock @InjectMocks passes null.
+    @Mock
+    AuditService audit;
+
     @InjectMocks
     SupplierService service;
 

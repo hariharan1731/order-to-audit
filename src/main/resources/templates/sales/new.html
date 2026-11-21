@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('New order')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container" style="max-width: 640px;">
+  <h1 class="h4 mb-3">New order</h1>
+  <form th:action="@{/sales/orders}" method="post" class="card p-3">
+    <input type="hidden" name="requestId" th:value="${requestId}">
+    <div class="mb-3">
+      <label for="customerId" class="form-label">Customer</label>
+      <select id="customerId" name="customerId" class="form-select form-select-lg" required>
+        <option value="" disabled selected>Choose a customer</option>
+        <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}">Retailer A</option>
+      </select>
+    </div>
+    <div class="mb-3" th:each="p : ${products}">
+      <label class="form-label" th:for="'qty' + ${p.id}" th:text="${p.name} + ' (packets)'">Murukku 200 g (packets)</label>
+      <input type="hidden" name="itemId" th:value="${p.id}">
+      <input type="number" name="quantity" th:id="'qty' + ${p.id}" class="form-control qty-input"
+             min="0" step="1" inputmode="numeric" value="0">
+    </div>
+    <div class="mb-3">
+      <label for="note" class="form-label">Note (optional)</label>
+      <input id="note" name="note" class="form-control" maxlength="300">
+    </div>
+    <button class="btn btn-primary btn-lg-touch" type="submit">Send for approval</button>
+  </form>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

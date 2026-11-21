@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Prices')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <h1 class="h4 mb-3">Selling prices</h1>
+  <p class="text-muted">Price per packet before GST. New orders pick up the price at the time they are placed.</p>
+  <div class="card p-3">
+    <form th:each="r : ${rows}" th:action="@{/admin/prices/{id}(id=${r.itemId})}" method="post" class="row g-2 align-items-end mb-2">
+      <div class="col-12 col-md-5"><strong th:text="${r.name}">Murukku 200 g</strong>
+        <span class="text-danger small" th:if="${r.pricePaise == null}"> (no price set)</span></div>
+      <div class="col-6 col-md-4"><label class="form-label small">Price (Rs)</label>
+        <input type="number" name="priceRupees" class="form-control" min="0" step="0.01" required
+               th:value="${r.pricePaise != null} ? ${@fmt.plainRupees(r.pricePaise)} : ''"></div>
+      <div class="col-6 col-md-3"><button class="btn btn-outline-primary w-100" type="submit">Save</button></div>
+    </form>
+  </div>
+
+  <h2 class="h5 mt-4">Special price for one customer</h2>
+  <p class="text-muted">Overrides the selling price above for that customer only.</p>
+  <form th:action="@{/admin/prices/special}" method="post" class="card p-3 row g-2 align-items-end mx-0">
+    <div class="col-12 col-md-4"><label class="form-label small" for="customerId">Customer</label>
+      <select id="customerId" name="customerId" class="form-select">
+        <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}">Retailer A</option></select></div>
+    <div class="col-12 col-md-3"><label class="form-label small" for="itemId">Product</label>
+      <select id="itemId" name="itemId" class="form-select">
+        <option th:each="p : ${products}" th:value="${p.id}" th:text="${p.name}">Murukku</option></select></div>
+    <div class="col-6 col-md-3"><label class="form-label small" for="specialRupees">Price (Rs)</label>
+      <input id="specialRupees" type="number" name="priceRupees" class="form-control" min="0" step="0.01" required></div>
+    <div class="col-6 col-md-2"><button class="btn btn-outline-primary w-100" type="submit">Save</button></div>
+  </form>
+  <div class="card p-2 mt-3" th:unless="${#lists.isEmpty(specials)}">
+    <table class="table table-sm mb-0" id="special-prices">
+      <thead><tr><th>Customer</th><th>Product</th><th class="text-end">Price</th></tr></thead>
+      <tbody><tr th:each="s : ${specials}"><td th:text="${s.customer}">x</td><td th:text="${s.item}">x</td>
+        <td class="text-end money" th:text="${@fmt.rupees(s.pricePaise)}">x</td></tr></tbody>
+    </table>
+  </div>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

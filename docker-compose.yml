@@ -1,4 +1,5 @@
-# One command starts the database:  docker compose up -d
+# One command starts everything:  docker compose up --build   (then open http://localhost:8080)
+# Only the database (run the app from your IDE):  docker compose up -d db
 services:
   db:
     image: postgres:16-alpine
@@ -16,6 +17,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/orderaudit
+      DB_USER: orderaudit
+      DB_PASSWORD: ${DB_PASSWORD:-orderaudit_dev}
+      # Loads the official benchmark data and one demo login per role on first start.
+      APP_SEED_ENABLED: "true"
+    ports:
+      - "8080:8080"
 
 volumes:
   orderaudit_data:

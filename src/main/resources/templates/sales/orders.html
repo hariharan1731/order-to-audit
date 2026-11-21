@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('My orders')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 m-0">My orders</h1>
+    <a class="btn btn-primary btn-lg-touch" th:href="@{/sales/orders/new}">+ New order</a>
+  </div>
+  <p class="text-muted" th:if="${#lists.isEmpty(orders)}">You have not placed any orders yet.</p>
+  <div class="list-group" th:unless="${#lists.isEmpty(orders)}">
+    <a class="list-group-item list-group-item-action" th:each="o : ${orders}" th:href="@{/sales/orders/{id}(id=${o.id})}">
+      <div class="d-flex justify-content-between">
+        <strong th:text="'#' + ${o.id} + ' - ' + ${o.customerName}">#1 - Retailer A</strong>
+        <span class="badge" th:classappend="'status-' + ${o.status}" th:text="${o.status}">SUBMITTED</span>
+      </div>
+      <div class="text-muted small">
+        <span th:text="${@fmt.number(o.packets)} + ' packets'">150 packets</span> &middot;
+        <span class="money" th:text="${@fmt.rupees(o.totalPaise)} + ' + GST'">Rs 7,500.00</span> &middot;
+        <span th:text="${@fmt.dateTime(o.createdAt)}">date</span>
+      </div>
+    </a>
+  </div>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

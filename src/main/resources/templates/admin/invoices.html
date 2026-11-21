@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Invoices')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <h1 class="h4 mb-3">Invoices</h1>
+  <p class="text-muted" th:if="${#lists.isEmpty(invoices)}">No invoices yet.</p>
+  <div class="table-responsive card p-2" th:unless="${#lists.isEmpty(invoices)}">
+    <table class="table table-hover mb-0 align-middle">
+      <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th class="text-end">Total</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="i : ${invoices}">
+          <td th:text="${i.invoiceNumber}">INV/2026-27/0001</td>
+          <td th:text="${@fmt.date(i.invoiceDate)}">21 Nov 2026</td>
+          <td th:text="${i.customerName}">Retailer A</td>
+          <td class="text-end money" th:text="${@fmt.rupees(i.totalPaise)}">Rs 7,875.00</td>
+          <td><span class="badge" th:classappend="${i.status.name() == 'ISSUED'} ? 'bg-success' : 'bg-secondary'" th:text="${i.status}">ISSUED</span></td>
+          <td class="text-end"><a class="btn btn-sm btn-primary" th:href="@{/admin/invoices/{id}(id=${i.id})}">Open</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

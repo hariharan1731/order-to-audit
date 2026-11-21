@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Invoice')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 m-0" th:text="${invoice.invoiceNumber}">INV/2026-27/0001</h1>
+    <a class="btn btn-outline-primary btn-sm" id="download-pdf" th:href="@{/admin/invoices/{id}/pdf(id=${invoice.id})}">Download PDF</a>
+    <span class="badge fs-6" th:classappend="${invoice.status.name() == 'ISSUED'} ? 'bg-success' : 'bg-secondary'" th:text="${invoice.status}">ISSUED</span>
+  </div>
+  <div class="card p-3 mb-3">
+    <strong th:text="${invoice.customerName}">Retailer A</strong>
+    <div class="small text-muted">
+      GSTIN: <span th:text="${invoice.customerGstin != null} ? ${invoice.customerGstin} : 'unregistered'">-</span> &middot;
+      Place of supply state <span th:text="${invoice.customerState}">33</span> &middot;
+      <span th:text="${invoice.intraState} ? 'CGST + SGST (same state)' : 'IGST (other state)'">tax kind</span> &middot;
+      dated <span th:text="${@fmt.date(invoice.invoiceDate)}">date</span> &middot; by <span th:text="${invoice.createdBy}">admin</span>
+    </div>
+  </div>
+  <div class="table-responsive card p-2 mb-3">
+    <table class="table mb-0">
+      <thead><tr><th>Product</th><th class="text-end">Packets</th><th class="text-end">Rate</th><th class="text-end">Taxable</th><th class="text-end">GST %</th></tr></thead>
+      <tbody>
+        <tr th:each="l : ${lines}">
+          <td th:text="${l.itemName}">Murukku 200 g</td>
+          <td class="text-end" th:text="${@fmt.number(l.quantity)}">150</td>
+          <td class="text-end money" th:text="${@fmt.rupees(l.unitPricePaise)}">Rs 50.00</td>
+          <td class="text-end money" th:text="${@fmt.rupees(l.taxablePaise)}">Rs 7,500.00</td>
+          <td class="text-end" th:text="${l.gstRatePercent}">5.00</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr><td colspan="3" class="text-end">Taxable value</td><td class="text-end money" th:text="${@fmt.rupees(invoice.taxablePaise)}">x</td><td></td></tr>
+        <tr th:if="${invoice.cgstPaise > 0 or invoice.intraState}"><td colspan="3" class="text-end">CGST</td><td class="text-end money" th:text="${@fmt.rupees(invoice.cgstPaise)}">x</td><td></td></tr>
+        <tr th:if="${invoice.sgstPaise > 0 or invoice.intraState}"><td colspan="3" class="text-end">SGST</td><td class="text-end money" th:text="${@fmt.rupees(invoice.sgstPaise)}">x</td><td></td></tr>
+        <tr th:unless="${invoice.intraState}"><td colspan="3" class="text-end">IGST</td><td class="text-end money" th:text="${@fmt.rupees(invoice.igstPaise)}">x</td><td></td></tr>
+        <tr class="fw-bold"><td colspan="3" class="text-end">Invoice total</td><td class="text-end money" th:text="${@fmt.rupees(invoice.totalPaise)}">x</td><td></td></tr>
+      </tfoot>
+    </table>
+  </div>
+  <div class="card p-3 mb-3" th:if="${outstanding != null}">
+    Outstanding: <strong class="money" th:text="${@fmt.rupees(outstanding)}">Rs 3,875.00</strong>
+  </div>
+  <div class="alert alert-secondary" th:if="${creditNote != null}">
+    Cancelled by credit note <strong th:text="${creditNote.creditNoteNumber}">CN/2026-27/0001</strong>
+    on <span th:text="${@fmt.date(creditNote.creditDate)}">date</span>: <span th:text="${creditNote.reason}">reason</span>
+  </div>
+  <div class="card p-3" th:if="${invoice.status.name() == 'ISSUED'}">
+    <h2 class="h6">Goods returned? Issue a credit note</h2>
+    <p class="small text-muted" th:if="${hasPayments}">This invoice already has payments against it. Refund the payment first, then issue the credit note.</p>
+    <form th:action="@{/admin/invoices/{id}/credit-note(id=${invoice.id})}" method="post" class="row g-2 align-items-end" th:unless="${hasPayments}">
+      <div class="col-12 col-md-3"><label class="form-label small">Date</label>
+        <input type="date" name="creditDate" class="form-control" th:value="${today}" required></div>
+      <div class="col-12 col-md-6"><label class="form-label small">Reason</label>
+        <input name="reason" class="form-control" maxlength="300" required></div>
+      <div class="col-12 col-md-3"><button class="btn btn-outline-danger w-100" type="submit">Issue credit note</button></div>
+    </form>
+  </div>
+  <a class="btn btn-link mt-2" th:href="@{/admin/invoices}">&larr; Invoices</a>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

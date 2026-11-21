@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Reports')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container" style="max-width: 760px;">
+  <h1 class="h4 mb-3">Reports</h1>
+  <form th:action="@{/reports/run}" method="get" class="card p-3">
+    <div class="mb-3">
+      <label for="slug" class="form-label">Report</label>
+      <select id="slug" name="slug" class="form-select form-select-lg">
+        <option th:each="k : ${keys}" th:value="${k.slug}" th:text="${k.title}">Sales register</option>
+      </select>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-6"><label for="from" class="form-label">From</label>
+        <input id="from" type="date" name="from" class="form-control" th:value="${from}"></div>
+      <div class="col-6"><label for="to" class="form-label">To</label>
+        <input id="to" type="date" name="to" class="form-control" th:value="${to}"></div>
+      <div class="col-6"><label for="asOf" class="form-label">As of (outstanding report)</label>
+        <input id="asOf" type="date" name="asOf" class="form-control" th:value="${to}"></div>
+      <div class="col-6"><label for="itemId" class="form-label">Item (stock ledger)</label>
+        <select id="itemId" name="itemId" class="form-select">
+          <option value="">-</option>
+          <option th:each="i : ${items}" th:value="${i.id}" th:text="${i.name}">Flour</option>
+        </select></div>
+    </div>
+    <div class="mb-3">
+      <span class="form-label d-block">Show as</span>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="format" id="f-html" value="html" checked>
+        <label class="form-check-label" for="f-html">On screen</label></div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="format" id="f-csv" value="csv">
+        <label class="form-check-label" for="f-csv">CSV</label></div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="format" id="f-xlsx" value="xlsx">
+        <label class="form-check-label" for="f-xlsx">Excel</label></div>
+      <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="format" id="f-pdf" value="pdf">
+        <label class="form-check-label" for="f-pdf">PDF</label></div>
+    </div>
+    <button class="btn btn-primary btn-lg-touch" type="submit">Show report</button>
+  </form>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Stock')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Stock now</h1>
+    <a class="btn btn-outline-primary" id="record-purchase" th:href="@{/stock/purchases/new}">Record purchase</a>
+  </div>
+  <div class="table-responsive card p-2">
+    <table class="table table-hover mb-0 align-middle">
+      <thead><tr><th>Item</th><th>Type</th><th class="text-end">On hand</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="r : ${rows}">
+          <td th:text="${r.name}">Flour</td>
+          <td><span class="badge bg-light text-dark" th:text="${r.type}">RAW</span></td>
+          <td class="text-end money" th:text="${r.readable}">120 kg</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-secondary" th:href="@{/stock/items/{id}(id=${r.itemId})}">History</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

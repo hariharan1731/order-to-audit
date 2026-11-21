@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Owner dashboard')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container">
+  <div class="d-flex flex-wrap justify-content-between align-items-end mb-3 gap-2">
+    <div><h1 class="h4 m-0">Owner dashboard</h1>
+      <div class="text-muted small" th:text="${d.period.label()}">period</div></div>
+    <form th:action="@{/owner}" method="get" class="d-flex gap-2">
+      <input type="date" name="from" class="form-control form-control-sm" th:value="${d.period.from()}">
+      <input type="date" name="to" class="form-control form-control-sm" th:value="${d.period.to()}">
+      <button class="btn btn-sm btn-outline-primary" type="submit">Go</button>
+    </form>
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="card p-3 h-100 kpi kpi-primary"><div class="text-muted small">Sales incl. GST</div>
+      <div class="h5 money m-0" id="kpi-sales" th:text="${@fmt.rupees(d.salesInclGstPaise)}">Rs 0.00</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3 h-100 kpi kpi-warning"><div class="text-muted small">Outstanding</div>
+      <div class="h5 money m-0" id="kpi-outstanding" th:text="${@fmt.rupees(d.outstandingPaise)}">Rs 0.00</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3 h-100 kpi kpi-success"><div class="text-muted small">Finished packets in stock</div>
+      <div class="h5 m-0" id="kpi-stock" th:text="${@fmt.number(d.finishedPackets)}">0</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3 h-100 kpi kpi-info"><div class="text-muted small">Orders waiting approval</div>
+      <div class="h5 m-0" id="kpi-waiting" th:text="${d.ordersWaiting}">0</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3 h-100 kpi kpi-danger"><div class="text-muted small">Flagged production runs</div>
+      <div class="h5 m-0" id="kpi-flagged" th:text="${d.flaggedRuns}">0</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3 h-100 kpi kpi-secondary"><div class="text-muted small">Latest cost per packet</div>
+      <div class="h5 money m-0" id="kpi-cost" th:text="${d.latestCostPerPacket}">-</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3 h-100 kpi kpi-success"><div class="text-muted small">Latest margin</div>
+      <div class="h5 m-0" id="kpi-margin" th:text="${d.latestMarginPct}">-</div></div></div>
+    <div class="col-6 col-md-3"><div class="card p-3 h-100 kpi kpi-primary"><div class="text-muted small">Sales before GST</div>
+      <div class="h5 money m-0" th:text="${@fmt.rupees(d.taxableSalesPaise)}">Rs 0.00</div></div></div>
+  </div>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-7"><div class="card p-3 h-100">
+      <h2 class="h6">Sales per day (incl. GST, Rs)</h2>
+      <p class="text-muted small mb-0" th:if="${#lists.isEmpty(d.salesDays)}">No invoices in this period.</p>
+      <div class="chart-box" th:unless="${#lists.isEmpty(d.salesDays)}"><canvas id="chart-sales"></canvas></div>
+    </div></div>
+    <div class="col-12 col-lg-5"><div class="card p-3 h-100">
+      <h2 class="h6">Money owed by age (Rs)</h2>
+      <div class="chart-box"><canvas id="chart-ageing"></canvas></div>
+    </div></div>
+  </div>
+  <h2 class="h6">Who owes the most</h2>
+  <p class="text-muted" th:if="${#lists.isEmpty(d.topDebtors)}">Nobody owes anything.</p>
+  <div class="table-responsive card p-2" th:unless="${#lists.isEmpty(d.topDebtors)}">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Customer</th><th class="text-end">0-30</th><th class="text-end">31-60</th><th class="text-end">61-90</th><th class="text-end">Over 90</th><th class="text-end">Total</th></tr></thead>
+      <tbody><tr th:each="r : ${d.topDebtors}">
+        <td th:text="${r.customerName}">Retailer A</td>
+        <td class="text-end money" th:text="${@fmt.rupees(r.days0to30)}">x</td>
+        <td class="text-end money" th:text="${@fmt.rupees(r.days31to60)}">x</td>
+        <td class="text-end money" th:text="${@fmt.rupees(r.days61to90)}">x</td>
+        <td class="text-end money" th:text="${@fmt.rupees(r.over90)}">x</td>
+        <td class="text-end money fw-bold" th:text="${@fmt.rupees(r.total)}">x</td>
+      </tr></tbody>
+    </table>
+  </div>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script th:inline="javascript">
+  // Charts are a bonus: if the CDN is unreachable the numbers above still work.
+  if (window.Chart) {
+    const days = /*[[${d.salesDays}]]*/ [];
+    const sales = /*[[${d.salesAmounts}]]*/ [];
+    const ageing = /*[[${d.ageingAmounts}]]*/ [];
+    const salesCanvas = document.getElementById('chart-sales');
+    if (salesCanvas) {
+      new Chart(salesCanvas, { type: 'bar',
+        data: { labels: days, datasets: [{ label: 'Sales', data: sales, backgroundColor: '#0d6efd', borderRadius: 4 }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+    }
+    new Chart(document.getElementById('chart-ageing'), { type: 'doughnut',
+      data: { labels: ['0-30 days', '31-60', '61-90', 'Over 90'], datasets: [{ data: ageing,
+        backgroundColor: ['#198754', '#ffc107', '#fd7e14', '#dc3545'] }] },
+      options: { maintainAspectRatio: false } });
+  }
+</script>
+</body>
+</html>

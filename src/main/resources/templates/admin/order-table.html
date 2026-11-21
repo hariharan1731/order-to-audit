@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="orderTable(list)">
+  <p class="text-muted" th:if="${#lists.isEmpty(list)}">Nothing waiting here.</p>
+  <div class="table-responsive card p-2" th:unless="${#lists.isEmpty(list)}">
+    <table class="table table-hover mb-0 align-middle">
+      <thead><tr><th>Order</th><th>Customer</th><th>Salesman</th><th class="text-end">Packets</th><th class="text-end">Before GST</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="o : ${list}">
+          <td th:text="'#' + ${o.id}">#1</td>
+          <td th:text="${o.customerName}">Retailer A</td>
+          <td th:text="${o.salesman}">ravi</td>
+          <td class="text-end" th:text="${@fmt.number(o.packets)}">150</td>
+          <td class="text-end money" th:text="${@fmt.rupees(o.totalPaise)}">Rs 7,500.00</td>
+          <td class="text-end"><a class="btn btn-sm btn-primary" th:href="@{/admin/orders/{id}(id=${o.id})}">Open</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>

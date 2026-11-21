@@ -54,11 +54,13 @@ public class ProductionService {
     private final RunLineRepository runLines;
     private final RunOverheadRepository overheadRows;
     private final StockMovementRepository movements;
+    private final AuditService audit;
 
     public ProductionService(BomService bom, StockService stock, CostingService costing, SettingService settings,
                              PackConfigRepository packConfigs, RecipeRepository recipes,
                              ProductionRunRepository runs, RunLineRepository runLines,
-                             RunOverheadRepository overheadRows, StockMovementRepository movements) {
+                             RunOverheadRepository overheadRows, StockMovementRepository movements,
+                             AuditService audit) {
         this.bom = bom;
         this.stock = stock;
         this.costing = costing;
@@ -69,6 +71,7 @@ public class ProductionService {
         this.runLines = runLines;
         this.overheadRows = overheadRows;
         this.movements = movements;
+        this.audit = audit;
     }
 
     /** One planned line after costing: what was planned, what was used, at what rate, and the variance. */
@@ -185,6 +188,8 @@ public class ProductionService {
             stock.post(config.getFinishedItemId(), MovementType.PROD_OUTPUT, actualGoodPackets, costPerPacket,
                     SourceType.PRODUCTION_RUN, run.getId(), postedBy);
         }
+        audit.record(postedBy, "PRODUCTION_POSTED", "RUN", run.getId(),
+                actualGoodPackets + " good packets, " + damagedPouches + " damaged pouches");
         return run;
     }
 
@@ -208,6 +213,7 @@ public class ProductionService {
             stock.reverse(m.getId(), postedBy);
         }
         run.markReversed();
+        audit.record(postedBy, "PRODUCTION_REVERSED", "RUN", runId, null);
         return runs.save(run);
     }
 }
