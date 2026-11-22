@@ -18,7 +18,7 @@ single command to run everything.
 | Item | Link |
 |---|---|
 | Public repository | https://github.com/hariharan1731/order-to-audit |
-| Demo video (section 5 scenario, max 8 min) | _add the unlisted YouTube / Drive link here_ |
+| Demo video (section 5 scenario, 5 min 23 s) | https://drive.google.com/file/d/1FdpUWpP3ivZG2aWXgaCVW6FEQbEWllfE/view?usp=sharing |
 | Live demo | _none; run locally with the single command below_ |
 
 ## Run it (one command)
