@@ -43,10 +43,22 @@ public class AdminOrderController {
     }
 
     @GetMapping
-    public String desk(Model model) {
+    public String desk(@RequestParam(required = false) String q,
+                       @RequestParam(required = false) String status,
+                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                       @RequestParam(required = false) String sort, Model model) {
         model.addAttribute("toApprove", queries.withStatus(OrderStatus.SUBMITTED));
         model.addAttribute("toInvoice", queries.withStatus(OrderStatus.APPROVED));
         model.addAttribute("toDispatch", queries.withStatus(OrderStatus.INVOICED));
+        OrderFilter filter = new OrderFilter(q, status, from, to, sort);
+        model.addAttribute("filter", filter);
+        model.addAttribute("statuses", OrderStatus.values());
+        model.addAttribute("stats", queries.stats(null));
+        if (filter.active()) {                       // searching shows one result list instead of the three queues
+            model.addAttribute("results",
+                    queries.search(null, q, filter.statusValue(), from, to, filter.sortOrDefault()));
+        }
         return "admin/orders";
     }
 

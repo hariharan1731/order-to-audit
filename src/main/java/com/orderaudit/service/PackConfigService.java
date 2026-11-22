@@ -28,9 +28,11 @@ public class PackConfigService {
     private final PackLineRepository lines;
     private final RecipeRepository recipes;
     private final ItemRepository items;
+    private final AuditService audit;
 
     public PackConfigService(PackConfigRepository configs, PackLineRepository lines,
-                             RecipeRepository recipes, ItemRepository items) {
+                             RecipeRepository recipes, ItemRepository items, AuditService audit) {
+        this.audit = audit;
         this.configs = configs;
         this.lines = lines;
         this.recipes = recipes;
@@ -77,6 +79,8 @@ public class PackConfigService {
         for (PackLineSpec spec : specs) {
             lines.save(new PackLine(saved.getId(), spec.itemId(), spec.quantity(), spec.basis()));
         }
+        audit.record(com.orderaudit.security.CurrentUser.name(), "PACK_CONFIG_CREATED", "PACK_CONFIG", saved.getId(),
+                finished.getName() + " " + packSizeGrams + " g, " + packetsPerCarton + " per carton");
         return saved;
     }
 }

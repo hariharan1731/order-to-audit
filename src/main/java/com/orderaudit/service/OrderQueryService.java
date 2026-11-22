@@ -1,19 +1,27 @@
 package com.orderaudit.service;
 
 import com.orderaudit.domain.Customer;
+import com.orderaudit.domain.GstBreakdown;
+import com.orderaudit.domain.Invoice;
 import com.orderaudit.domain.Item;
+import com.orderaudit.domain.Money;
 import com.orderaudit.domain.OrderLine;
 import com.orderaudit.domain.OrderStatus;
 import com.orderaudit.domain.SalesOrder;
 import com.orderaudit.domain.StockCheckLine;
+import com.orderaudit.report.ReportPeriod;
 import com.orderaudit.repository.CustomerRepository;
+import com.orderaudit.repository.InvoiceRepository;
 import com.orderaudit.repository.ItemRepository;
 import com.orderaudit.repository.OrderLineRepository;
 import com.orderaudit.repository.SalesOrderRepository;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -23,9 +31,45 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class OrderQueryService {
 
-    /** One row of an order list. totalPaise is before GST (price x quantity). */
+    /**
+     * One row of an order list.
+     * totalPaise is before GST (price x quantity). gstPaise and totalWithGstPaise come from the real invoice once
+     * the order is invoiced; before that they are what the invoice WOULD be at today's rates, and gstEstimated() is
+     * true so the screen can say so. products is a short description like "Murukku 200 g" or "Murukku 200 g +1 more".
+     */
     public record OrderSummary(long id, String customerName, OrderStatus status, Instant createdAt,
-                               String salesman, long totalPaise, long packets) {
+                               String salesman, long totalPaise, long packets, long gstPaise,
+                               long totalWithGstPaise, String invoiceNumber, String products) {
+
+        /** True while no invoice exists yet, so the GST shown is an expectation and not a document. */
+        public boolean gstEstimated() {
+            return invoiceNumber == null;
+        }
+
+        /**
+         * The order's date in Indian time, used by the date filter.
+         * The database fills created_at, so this is null for an order that has been saved but not read back yet.
+         */
+        public LocalDate orderDate() {
+            return createdAt == null ? null : createdAt.atZone(ReportPeriod.ZONE).toLocalDate();
+        }
+    }
+
+    /**
+     * How many orders sit in each stage, for the dashboard cards.
+     * "Pending" means started but not finished: waiting approval + approved + invoiced.
+     * "Completed" means dispatched - the goods have left the factory.
+     */
+    public record OrderStats(long total, long submitted, long approved, long invoiced, long dispatched,
+                             long rejected) {
+
+        public long pending() {
+            return submitted + approved + invoiced;
+        }
+
+        public long completed() {
+            return dispatched;
+        }
     }
 
     /** availableNow and shortage are only filled while the order still waits for approval. */
@@ -41,14 +85,19 @@ public class OrderQueryService {
     private final OrderLineRepository lines;
     private final CustomerRepository customers;
     private final ItemRepository items;
+    private final InvoiceRepository invoices;
+    private final SettingService settings;
     private final OrderService orderService;
 
     public OrderQueryService(SalesOrderRepository orders, OrderLineRepository lines, CustomerRepository customers,
-                             ItemRepository items, OrderService orderService) {
+                             ItemRepository items, InvoiceRepository invoices, SettingService settings,
+                             OrderService orderService) {
         this.orders = orders;
         this.lines = lines;
         this.customers = customers;
         this.items = items;
+        this.invoices = invoices;
+        this.settings = settings;
         this.orderService = orderService;
     }
 
@@ -60,6 +109,68 @@ public class OrderQueryService {
     @Transactional(readOnly = true)
     public List<OrderSummary> withStatus(OrderStatus status) {
         return summaries(orders.findByStatusOrderByIdAsc(status));
+    }
+
+    /**
+     * Search, filter and sort. Every argument may be null, which means "do not filter on this".
+     * salesman limits the list to one person's orders (the salesman's own screen); null means every order.
+     * query matches the order number or any part of the customer's name, ignoring case.
+     */
+    @Transactional(readOnly = true)
+    public List<OrderSummary> search(String salesman, String query, OrderStatus status, LocalDate from, LocalDate to,
+                                     String sort) {
+        List<OrderSummary> rows = new ArrayList<>(salesman == null || salesman.isBlank()
+                ? summaries(orders.findAll()) : summaries(orders.findBySalesmanOrderByIdDesc(salesman)));
+        String text = query == null ? "" : query.trim().toLowerCase();
+        String digits = text.startsWith("#") ? text.substring(1) : text;
+        rows.removeIf(o -> {
+            if (status != null && o.status() != status) {
+                return true;
+            }
+            LocalDate day = o.orderDate();            // null only when the row has not been read back from the DB
+            if (day != null && from != null && day.isBefore(from)) {
+                return true;
+            }
+            if (day != null && to != null && day.isAfter(to)) {
+                return true;
+            }
+            if (!text.isEmpty()) {
+                boolean matchesNumber = String.valueOf(o.id()).equals(digits);
+                boolean matchesName = o.customerName().toLowerCase().contains(text);
+                boolean matchesInvoice = o.invoiceNumber() != null && o.invoiceNumber().toLowerCase().contains(text);
+                return !(matchesNumber || matchesName || matchesInvoice);
+            }
+            return false;
+        });
+        rows.sort(comparator(sort));
+        return rows;
+    }
+
+    private static Comparator<OrderSummary> comparator(String sort) {
+        return switch (sort == null ? "" : sort) {
+            case "oldest" -> Comparator.comparingLong(OrderSummary::id);
+            case "amount" -> Comparator.comparingLong(OrderSummary::totalWithGstPaise).reversed();
+            case "customer" -> Comparator.comparing(OrderSummary::customerName, String.CASE_INSENSITIVE_ORDER)
+                    .thenComparing(Comparator.comparingLong(OrderSummary::id).reversed());
+            default -> Comparator.comparingLong(OrderSummary::id).reversed();      // newest first
+        };
+    }
+
+    /** Counts per stage. salesman null = the whole factory, otherwise only that salesman's orders. */
+    @Transactional(readOnly = true)
+    public OrderStats stats(String salesman) {
+        List<SalesOrder> list = salesman == null || salesman.isBlank()
+                ? orders.findAll() : orders.findBySalesmanOrderByIdDesc(salesman);
+        long submitted = count(list, OrderStatus.SUBMITTED);
+        long approved = count(list, OrderStatus.APPROVED);
+        long invoiced = count(list, OrderStatus.INVOICED);
+        long dispatched = count(list, OrderStatus.DISPATCHED);
+        long rejected = count(list, OrderStatus.REJECTED);
+        return new OrderStats(list.size(), submitted, approved, invoiced, dispatched, rejected);
+    }
+
+    private static long count(List<SalesOrder> list, OrderStatus status) {
+        return list.stream().filter(o -> o.getStatus() == status).count();
     }
 
     @Transactional(readOnly = true)
@@ -89,18 +200,47 @@ public class OrderQueryService {
     }
 
     private List<OrderSummary> summaries(List<SalesOrder> list) {
+        String factoryState = settings.factoryStateCode();
         List<OrderSummary> result = new ArrayList<>();
         for (SalesOrder order : list) {
-            String customerName = customers.findById(order.getCustomerId()).map(Customer::getName).orElse("?");
+            Customer customer = customers.findById(order.getCustomerId()).orElse(null);
+            String customerName = customer == null ? "?" : customer.getName();
+            boolean intra = customer != null && GstCalculator.isIntraState(factoryState, customer.getStateCode());
+
             long total = 0;
             long packets = 0;
+            GstBreakdown expected = GstBreakdown.ZERO;
+            List<String> names = new ArrayList<>();
             for (OrderLine line : lines.findByOrderIdOrderByItemIdAsc(order.getId())) {
-                total += Math.multiplyExact(line.getQuantity(), line.getUnitPricePaise());
+                long lineTotal = Math.multiplyExact(line.getQuantity(), line.getUnitPricePaise());
+                total += lineTotal;
                 packets += line.getQuantity();
+                Item item = items.findById(line.getItemId()).orElse(null);
+                if (item != null) {
+                    names.add(item.getName());
+                    expected = expected.plus(
+                            GstCalculator.calculate(Money.ofPaise(lineTotal), item.getGstRatePercent(), intra));
+                }
             }
+
+            // Once the invoice exists its stored paise are the truth; before that we show what it would come to.
+            Optional<Invoice> invoice = invoices.findByOrderId(order.getId());
+            long gst = invoice.map(i -> i.getCgstPaise() + i.getSgstPaise() + i.getIgstPaise())
+                    .orElse(expected.totalTax().paise());
+            long withGst = invoice.map(Invoice::getTotalPaise).orElse(total + gst);
+
             result.add(new OrderSummary(order.getId(), customerName, order.getStatus(), order.getCreatedAt(),
-                    order.getSalesman(), total, packets));
+                    order.getSalesman(), total, packets, gst, withGst,
+                    invoice.map(Invoice::getInvoiceNumber).orElse(null), describe(names)));
         }
         return result;
+    }
+
+    /** "Murukku 200 g" for one product, "Murukku 200 g +2 more" when the order has several. */
+    private static String describe(List<String> names) {
+        if (names.isEmpty()) {
+            return "-";
+        }
+        return names.size() == 1 ? names.get(0) : names.get(0) + " +" + (names.size() - 1) + " more";
     }
 }

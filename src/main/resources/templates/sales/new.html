@@ -1,33 +1,83 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('New order')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container" style="max-width: 640px;">
-  <h1 class="h4 mb-3">New order</h1>
-  <form th:action="@{/sales/orders}" method="post" class="card p-3">
+<div class="container-xxl" style="max-width: 680px;">
+
+  <div class="oa-page-head">
+    <div th:replace="~{fragments :: pageHead('New order', 'Pick the customer, type the packets, send it for approval')}"></div>
+    <a class="btn btn-sm btn-outline-secondary" th:href="@{/sales/orders}">
+      <i class="bi bi-arrow-left me-1"></i>My orders</a>
+  </div>
+
+  <form th:action="@{/sales/orders}" method="post">
+    <!-- The same requestId on a re-send means one order, never two (safe to tap twice on a bad signal). -->
     <input type="hidden" name="requestId" th:value="${requestId}">
-    <div class="mb-3">
-      <label for="customerId" class="form-label">Customer</label>
-      <select id="customerId" name="customerId" class="form-select form-select-lg" required>
-        <option value="" disabled selected>Choose a customer</option>
-        <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}">Retailer A</option>
-      </select>
+
+    <div class="card mb-3">
+      <div class="oa-card-head"><span><i class="bi bi-shop me-1"></i>Customer</span></div>
+      <div class="p-3">
+        <label for="customerId" class="form-label visually-hidden">Customer</label>
+        <select id="customerId" name="customerId" class="form-select form-select-lg" required>
+          <option value="" disabled selected>Choose a customer</option>
+          <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name}">Retailer A</option>
+        </select>
+      </div>
     </div>
-    <div class="mb-3" th:each="p : ${products}">
-      <label class="form-label" th:for="'qty' + ${p.id}" th:text="${p.name} + ' (packets)'">Murukku 200 g (packets)</label>
-      <input type="hidden" name="itemId" th:value="${p.id}">
-      <input type="number" name="quantity" th:id="'qty' + ${p.id}" class="form-control qty-input"
-             min="0" step="1" inputmode="numeric" value="0">
+
+    <div class="card mb-3">
+      <div class="oa-card-head"><span><i class="bi bi-box-seam me-1"></i>Products</span>
+        <span class="small text-muted">Leave a product at 0 to skip it</span></div>
+      <div class="p-3">
+        <div class="oa-product-row" th:each="p : ${products}">
+          <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <div>
+              <label class="fw-semibold mb-0" th:for="'qty' + ${p.id}" th:text="${p.name} + ' (packets)'">Murukku 200 g (packets)</label>
+              <div class="oa-sub-cell" th:if="${p.listPricePaise != null}"
+                   th:text="${@fmt.rupees(p.listPricePaise)} + ' per packet'">Rs 50.00 per packet</div>
+              <div class="oa-sub-cell text-danger" th:if="${p.listPricePaise == null}">No price set yet</div>
+            </div>
+            <div class="input-group" style="max-width: 190px;">
+              <button class="btn btn-outline-secondary oa-step-down" type="button" tabindex="-1" aria-label="Less">
+                <i class="bi bi-dash-lg"></i></button>
+              <input type="hidden" name="itemId" th:value="${p.id}">
+              <input type="number" name="quantity" th:id="'qty' + ${p.id}" class="form-control qty-input"
+                     min="0" step="1" inputmode="numeric" value="0">
+              <button class="btn btn-outline-secondary oa-step-up" type="button" tabindex="-1" aria-label="More">
+                <i class="bi bi-plus-lg"></i></button>
+            </div>
+          </div>
+        </div>
+        <p class="text-muted mb-0" th:if="${#lists.isEmpty(products)}">No products are set up yet.</p>
+      </div>
     </div>
-    <div class="mb-3">
-      <label for="note" class="form-label">Note (optional)</label>
-      <input id="note" name="note" class="form-control" maxlength="300">
+
+    <div class="card mb-3">
+      <div class="p-3">
+        <label for="note" class="form-label">Note for the office (optional)</label>
+        <input id="note" name="note" class="form-control" maxlength="300" placeholder="Delivery instructions, for example">
+      </div>
     </div>
-    <button class="btn btn-primary btn-lg-touch" type="submit">Send for approval</button>
+
+    <button class="btn btn-primary btn-lg-touch w-100" type="submit">
+      <i class="bi bi-send me-1"></i>Send for approval</button>
   </form>
 </div>
 <th:block th:replace="~{fragments :: scripts}"></th:block>
+<script>
+  // The - and + buttons just nudge the number box, so the salesman can order with one thumb.
+  document.addEventListener('click', function (e) {
+    var down = e.target.closest('.oa-step-down');
+    var up = e.target.closest('.oa-step-up');
+    if (!down && !up) { return; }
+    var group = (down || up).closest('.input-group');
+    var box = group.querySelector('input.qty-input');
+    var value = parseInt(box.value || '0', 10);
+    if (isNaN(value)) { value = 0; }
+    box.value = Math.max(0, value + (up ? 1 : -1));
+  });
+</script>
 </body>
 </html>

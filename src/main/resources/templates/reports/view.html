@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head(${table.title})}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
+<div class="container-xxl">
   <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
     <div>
       <h1 class="h4 m-0" th:text="${table.title}">Report</h1>

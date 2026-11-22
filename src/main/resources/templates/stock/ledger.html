@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Stock history')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
+<div class="container-xxl">
   <h1 class="h4 m-0" th:text="${table.title}">Stock ledger</h1>
   <div class="text-muted small mb-3" th:text="${table.subtitle}">all time</div>
   <p class="small text-muted">Every movement is permanent. A mistake is fixed by a new reversing row, never by editing an old one.</p>

@@ -21,11 +21,22 @@ public class ItemService {
 
     private final ItemRepository repository;
     private final AuditService audit;
+    private final StockService stock;
+    private final com.orderaudit.repository.RecipeLineRepository recipeLines;
+    private final com.orderaudit.repository.PackLineRepository packLines;
+    private final com.orderaudit.repository.PackConfigRepository packConfigs;
 
     // Spring passes the repository in here (constructor injection).
-    public ItemService(ItemRepository repository, AuditService audit) {
+    public ItemService(ItemRepository repository, AuditService audit, StockService stock,
+                       com.orderaudit.repository.RecipeLineRepository recipeLines,
+                       com.orderaudit.repository.PackLineRepository packLines,
+                       com.orderaudit.repository.PackConfigRepository packConfigs) {
         this.repository = repository;
         this.audit = audit;
+        this.stock = stock;
+        this.recipeLines = recipeLines;
+        this.packLines = packLines;
+        this.packConfigs = packConfigs;
     }
 
     @Transactional // all-or-nothing: if anything throws, nothing is saved
@@ -63,5 +74,56 @@ public class ItemService {
     @Transactional(readOnly = true)
     public List<Item> activeItemsOfType(ItemType type) {
         return repository.findByItemTypeAndActiveTrueOrderByNameAsc(type);
+    }
+
+    /** Every item, active or not, for the item master screen. */
+    @Transactional(readOnly = true)
+    public List<Item> all() {
+        return repository.findAll().stream()
+                .sorted(java.util.Comparator.comparing(Item::getName, String.CASE_INSENSITIVE_ORDER)).toList();
+    }
+
+    /** Change HSN code and GST rate. Invoices already raised keep the rate they were issued with. */
+    @Transactional
+    public Item updateTaxDetails(long itemId, String hsnCode, BigDecimal gstRatePercent) {
+        Item item = repository.findById(itemId).orElseThrow(
+                () -> new IllegalArgumentException("Item " + itemId + " does not exist"));
+        if (gstRatePercent == null || gstRatePercent.signum() < 0 || gstRatePercent.compareTo(HUNDRED) > 0
+                || gstRatePercent.stripTrailingZeros().scale() > 2) {
+            throw new IllegalArgumentException("GST rate must be between 0 and 100 with at most 2 decimals");
+        }
+        String cleanHsn = (hsnCode == null || hsnCode.isBlank()) ? null : hsnCode.trim();
+        if (cleanHsn != null && !cleanHsn.matches("\\d{4}|\\d{6}|\\d{8}")) {
+            throw new IllegalArgumentException("HSN code must be 4, 6 or 8 digits");
+        }
+        String before = item.getHsnCode() + " / " + item.getGstRatePercent().stripTrailingZeros().toPlainString() + "%";
+        item.changeTaxDetails(cleanHsn, gstRatePercent);
+        audit.record(com.orderaudit.security.CurrentUser.name(), "ITEM_UPDATED", "ITEM", itemId,
+                item.getName() + ": " + before + " -> " + cleanHsn + " / "
+                        + gstRatePercent.stripTrailingZeros().toPlainString() + "%");
+        return item;
+    }
+
+    /**
+     * Switch an item off (hidden from drop-downs) or back on. An item cannot be switched off while stock remains or
+     * while a recipe or pack configuration still uses it, because production would then break.
+     */
+    @Transactional
+    public Item setActive(long itemId, boolean active) {
+        Item item = repository.findById(itemId).orElseThrow(
+                () -> new IllegalArgumentException("Item " + itemId + " does not exist"));
+        if (!active) {
+            if (stock.balanceOf(itemId) != 0) {
+                throw new IllegalStateException("'" + item.getName() + "' still has stock; it cannot be switched off");
+            }
+            if (recipeLines.existsByItemId(itemId) || packLines.existsByItemId(itemId)
+                    || packConfigs.existsByFinishedItemId(itemId)) {
+                throw new IllegalStateException("'" + item.getName() + "' is used by a recipe or pack configuration");
+            }
+        }
+        item.setActive(active);
+        audit.record(com.orderaudit.security.CurrentUser.name(), active ? "ITEM_ACTIVATED" : "ITEM_DEACTIVATED",
+                "ITEM", itemId, item.getName());
+        return item;
     }
 }

@@ -1,22 +1,104 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Order desk')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
-  <h1 class="h4 mb-3">Order desk</h1>
+<div class="container-xxl">
 
-  <h2 class="h5 mt-3">To approve <span class="badge bg-secondary" th:text="${#lists.size(toApprove)}">0</span></h2>
-  <div th:replace="~{admin/order-table :: orderTable(${toApprove})}"></div>
+  <div class="oa-page-head">
+    <div th:replace="~{fragments :: pageHead('Order desk', 'Approve, invoice and dispatch customer orders')}"></div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-primary" th:href="@{/admin/invoices}"><i class="bi bi-file-earmark-text me-1"></i>Invoices</a>
+      <a class="btn btn-primary" th:href="@{/sales/orders/new}"><i class="bi bi-plus-lg me-1"></i>New order</a>
+    </div>
+  </div>
 
-  <h2 class="h5 mt-4">To invoice <span class="badge bg-secondary" th:text="${#lists.size(toInvoice)}">0</span></h2>
-  <div th:replace="~{admin/order-table :: orderTable(${toInvoice})}"></div>
+  <div class="oa-stats">
+    <a class="oa-stat is-total" th:href="@{/admin/orders}">
+      <span class="oa-stat-label"><i class="bi bi-collection"></i> Total orders</span>
+      <span class="oa-stat-value" id="stat-total" th:text="${stats.total}">0</span>
+      <span class="oa-stat-foot">all time</span>
+    </a>
+    <div class="oa-stat is-pending">
+      <span class="oa-stat-label"><i class="bi bi-clock-history"></i> Pending</span>
+      <span class="oa-stat-value" id="stat-pending" th:text="${stats.pending()}">0</span>
+      <span class="oa-stat-foot">not dispatched yet</span>
+    </div>
+    <a class="oa-stat is-submitted" th:href="@{/admin/orders(status='SUBMITTED')}">
+      <span class="oa-stat-label"><i class="bi bi-hourglass-split"></i> Submitted</span>
+      <span class="oa-stat-value" id="stat-submitted" th:text="${stats.submitted}">0</span>
+      <span class="oa-stat-foot">waiting approval</span>
+    </a>
+    <a class="oa-stat is-approved" th:href="@{/admin/orders(status='APPROVED')}">
+      <span class="oa-stat-label"><i class="bi bi-check2-circle"></i> Approved</span>
+      <span class="oa-stat-value" id="stat-approved" th:text="${stats.approved}">0</span>
+      <span class="oa-stat-foot">waiting invoice</span>
+    </a>
+    <a class="oa-stat is-done" th:href="@{/admin/orders(status='DISPATCHED')}">
+      <span class="oa-stat-label"><i class="bi bi-truck"></i> Completed</span>
+      <span class="oa-stat-value" id="stat-completed" th:text="${stats.completed()}">0</span>
+      <span class="oa-stat-foot">dispatched</span>
+    </a>
+    <a class="oa-stat is-bad" th:href="@{/admin/orders(status='REJECTED')}">
+      <span class="oa-stat-label"><i class="bi bi-x-circle"></i> Rejected</span>
+      <span class="oa-stat-value" id="stat-rejected" th:text="${stats.rejected}">0</span>
+      <span class="oa-stat-foot">turned down</span>
+    </a>
+  </div>
 
-  <h2 class="h5 mt-4">To dispatch <span class="badge bg-secondary" th:text="${#lists.size(toDispatch)}">0</span></h2>
-  <div th:replace="~{admin/order-table :: orderTable(${toDispatch})}"></div>
+  <form class="oa-filters" method="get" th:action="@{/admin/orders}" id="order-filters">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label for="q">Search</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input class="form-control" id="q" name="q" th:value="${filter.q}"
+                 placeholder="Order number, customer or invoice number">
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="status">Status</label>
+        <select class="form-select" id="status" name="status">
+          <option value="">Any status</option>
+          <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                  th:selected="${filter.status != null and filter.status == s.name()}">SUBMITTED</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="from">From date</label>
+        <input class="form-control" type="date" id="from" name="from" th:value="${filter.from}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="to">To date</label>
+        <input class="form-control" type="date" id="to" name="to" th:value="${filter.to}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="sort">Sort by</label>
+        <select class="form-select" id="sort" name="sort">
+          <option value="newest" th:selected="${filter.sortOrDefault() == 'newest'}">Newest first</option>
+          <option value="oldest" th:selected="${filter.sortOrDefault() == 'oldest'}">Oldest first</option>
+          <option value="amount" th:selected="${filter.sortOrDefault() == 'amount'}">Highest value</option>
+          <option value="customer" th:selected="${filter.sortOrDefault() == 'customer'}">Customer A-Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-2">
+      <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+      <a class="btn btn-outline-secondary btn-sm" th:href="@{/admin/orders}">Clear</a>
+    </div>
+  </form>
+
+  <!-- Searching shows one result list; otherwise the three work queues, in the order the office works through them. -->
+  <div th:if="${results != null}">
+    <div th:replace="~{admin/order-table :: orderTable(${results}, 'Search results', 'bi-search', 'Matching orders')}"></div>
+  </div>
+  <div th:unless="${results != null}">
+    <div th:replace="~{admin/order-table :: orderTable(${toApprove}, 'To approve', 'bi-hourglass-split', 'Check stock, then approve or reject')}"></div>
+    <div th:replace="~{admin/order-table :: orderTable(${toInvoice}, 'To invoice', 'bi-file-earmark-text', 'Raise the GST invoice')}"></div>
+    <div th:replace="~{admin/order-table :: orderTable(${toDispatch}, 'To dispatch', 'bi-truck', 'Stock goes down when you dispatch')}"></div>
+  </div>
 </div>
-
 <th:block th:replace="~{fragments :: scripts}"></th:block>
 </body>
 </html>

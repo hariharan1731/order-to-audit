@@ -1,15 +1,40 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Production')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">Production runs</h1>
-    <a class="btn btn-primary" id="new-run" th:href="@{/production/new}">New run</a>
+<div class="container-xxl">
+  <div class="oa-page-head">
+    <div>
+      <h1>Production runs</h1>
+      <div class="oa-sub">Planned against actual for every batch. Runs outside the recipe tolerance are flagged.</div>
+    </div>
+    <a class="btn btn-primary" id="new-run" th:href="@{/production/new}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>New run</a>
   </div>
-  <div class="table-responsive card p-2">
+
+  <!-- Totals of the posted runs listed below (reversed runs are left out, as in the books). -->
+  <div class="oa-stats" id="production-summary" th:with="posted=${runs.?[status.name() == 'POSTED']}, flaggedRuns=${runs.?[flagged and status.name() == 'POSTED']}, reversed=${runs.?[status.name() == 'REVERSED']}">
+    <div class="oa-stat is-total">
+      <span class="oa-stat-label"><i class="bi bi-gear-wide-connected"></i> Runs posted</span>
+      <span class="oa-stat-value" th:text="${#lists.size(posted)}">0</span>
+      <span class="oa-stat-foot" th:if="${!#lists.isEmpty(reversed)}" th:text="${#lists.size(reversed)} + ' reversed'">0 reversed</span>
+    </div>
+    <div class="oa-stat is-submitted">
+      <span class="oa-stat-label"><i class="bi bi-clipboard-data"></i> Packets planned</span>
+      <span class="oa-stat-value" th:text="${#lists.isEmpty(posted)} ? '0' : ${#numbers.formatInteger(#aggregates.sum(posted.![expectedPackets]), 1, 'COMMA')}">0</span>
+    </div>
+    <div class="oa-stat is-done">
+      <span class="oa-stat-label"><i class="bi bi-check2-all"></i> Good packets made</span>
+      <span class="oa-stat-value" th:text="${#lists.isEmpty(posted)} ? '0' : ${#numbers.formatInteger(#aggregates.sum(posted.![goodPackets]), 1, 'COMMA')}">0</span>
+    </div>
+    <div class="oa-stat" th:classappend="${#lists.isEmpty(flaggedRuns)} ? 'is-approved' : 'is-pending'">
+      <span class="oa-stat-label"><i class="bi bi-flag"></i> Flagged runs</span>
+      <span class="oa-stat-value" th:text="${#lists.size(flaggedRuns)}">0</span>
+      <span class="oa-stat-foot">Outside recipe tolerance</span>
+    </div>
+  </div>
+  <div class="oa-table-card table-responsive">
     <table class="table table-hover mb-0 align-middle">
       <thead><tr><th>#</th><th>Date</th><th>Product</th><th class="text-end">Expected</th><th class="text-end">Good</th>
         <th class="text-end">Yield</th><th class="text-end">Cost / packet</th><th>Status</th><th></th></tr></thead>
@@ -19,14 +44,20 @@
           <td th:text="${@fmt.date(r.runDate)}">2026-11-01</td>
           <td th:text="${r.product}">Murukku</td>
           <td class="text-end" th:text="${r.expectedPackets}">200</td>
-          <td class="text-end" th:text="${r.goodPackets}">188</td>
-          <td class="text-end"><span th:text="${r.yieldVariancePct} + '%'">-6%</span>
-            <span class="badge bg-danger" th:if="${r.flagged}">flagged</span></td>
+          <td class="text-end" th:with="pct=${r.expectedPackets <= 0 ? 0 : (r.goodPackets >= r.expectedPackets ? 100 : r.goodPackets * 100 / r.expectedPackets)}">
+            <span th:text="${r.goodPackets}">188</span>
+            <div class="progress oa-progress mt-1 ms-auto" role="progressbar" aria-label="Good packets against planned"
+                 aria-valuemin="0" aria-valuemax="100" th:attr="aria-valuenow=${pct}" th:title="${pct} + '% of planned'">
+              <div class="progress-bar" th:classappend="${r.flagged} ? 'is-low'" th:style="'width: ' + ${pct} + '%'"></div>
+            </div></td>
+          <td class="text-end text-nowrap"><span th:text="${r.yieldVariancePct} + '%'">-6%</span>
+            <span class="badge oa-badge status-FLAGGED" th:if="${r.flagged}"><i class="bi bi-flag-fill" aria-hidden="true"></i>flagged</span></td>
           <td class="text-end money" th:text="${@fmt.rupeesRounded(r.costPerPacket)}">31.14</td>
-          <td><span class="badge bg-secondary" th:text="${r.status}">POSTED</span></td>
-          <td class="text-end"><a class="btn btn-sm btn-outline-secondary" th:href="@{/production/runs/{id}(id=${r.id})}">Open</a></td>
+          <td><span class="badge oa-badge" th:classappend="'status-' + ${r.status}" th:text="${r.status}">POSTED</span></td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-secondary" th:href="@{/production/runs/{id}(id=${r.id})}"><i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i>Open</a></td>
         </tr>
-        <tr th:if="${#lists.isEmpty(runs)}"><td colspan="9" class="text-muted text-center">No runs yet.</td></tr>
+        <tr th:if="${#lists.isEmpty(runs)}"><td colspan="9">
+          <div th:replace="~{fragments :: empty('bi-gear-wide-connected', 'No runs yet', 'Record the first production run to see yield and cost here.')}"></div></td></tr>
       </tbody>
     </table>
   </div>

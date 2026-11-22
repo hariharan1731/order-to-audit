@@ -35,7 +35,7 @@ public class DispatchService {
         if (dispatchedBy == null || dispatchedBy.isBlank()) {
             throw new IllegalArgumentException("dispatchedBy is required");
         }
-        SalesOrder order = orders.findById(orderId).orElseThrow(
+        SalesOrder order = orders.findForUpdate(orderId).orElseThrow(   // locked: no double dispatch
                 () -> new IllegalArgumentException("Order " + orderId + " does not exist"));
         order.markDispatched(dispatchedBy.trim());   // throws unless INVOICED
         List<OrderLine> lines = orderLines.findByOrderIdOrderByItemIdAsc(orderId);

@@ -31,6 +31,23 @@ public class Formats {
         return paise == null ? "" : rupees(com.orderaudit.service.CostMath.roundToPaise(paise));
     }
 
+    /** The Bootstrap icon that goes with an order or run status, so every screen shows the same picture. */
+    public String statusIcon(Object status) {
+        String name = status == null ? "" : status.toString();
+        return switch (name) {
+            case "SUBMITTED" -> "bi-hourglass-split";
+            case "APPROVED" -> "bi-check2-circle";
+            case "INVOICED" -> "bi-file-earmark-text";
+            case "DISPATCHED" -> "bi-truck";
+            case "REJECTED" -> "bi-x-circle";
+            case "POSTED" -> "bi-check2-circle";
+            case "REVERSED" -> "bi-arrow-counterclockwise";
+            case "ISSUED" -> "bi-file-earmark-check";
+            case "CANCELLED" -> "bi-x-octagon";
+            default -> "bi-dot";
+        };
+    }
+
     public String number(long value) {
         return String.format(Locale.ENGLISH, "%,d", value);
     }

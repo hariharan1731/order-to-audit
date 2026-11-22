@@ -41,4 +41,16 @@ class FormatsTest {
         assertThat(fmt.dateTime(null)).isEmpty();
         assertThat(fmt.date(null)).isEmpty();
     }
+
+    @Test
+    void everyStatusHasItsOwnIcon() {
+        assertThat(fmt.statusIcon("SUBMITTED")).isEqualTo("bi-hourglass-split");
+        assertThat(fmt.statusIcon("DISPATCHED")).isEqualTo("bi-truck");
+        assertThat(fmt.statusIcon("REJECTED")).isEqualTo("bi-x-circle");
+        assertThat(fmt.statusIcon(com.orderaudit.domain.OrderStatus.APPROVED)).isEqualTo("bi-check2-circle");
+        assertThat(fmt.statusIcon(null)).isEqualTo("bi-dot");
+        // invoice statuses use the same shared badge, so they get their own icons too
+        assertThat(fmt.statusIcon(com.orderaudit.domain.InvoiceStatus.ISSUED)).isEqualTo("bi-file-earmark-check");
+        assertThat(fmt.statusIcon("CANCELLED")).isEqualTo("bi-x-octagon");
+    }
 }

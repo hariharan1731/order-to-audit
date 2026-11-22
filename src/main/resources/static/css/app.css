@@ -1,32 +1,742 @@
-/* Small touches on top of Bootstrap. Mobile first: big tap targets for the salesman's phone. */
-body { background: #f6f7f9; }
-.navbar-brand { font-weight: 700; letter-spacing: .3px; }
-.card { border: 0; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); }
-.qty-input { font-size: 1.25rem; text-align: center; min-height: 3rem; }
-.btn-lg-touch { min-height: 3rem; font-size: 1.1rem; }
-.status-SUBMITTED { background: #ffc107; color: #000; }
-.status-APPROVED { background: #0d6efd; }
-.status-INVOICED { background: #6f42c1; }
-.status-DISPATCHED { background: #198754; }
-.status-REJECTED { background: #dc3545; }
-.money { font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* ============================================================================
+   Order to Audit - "Midnight Emerald" design system
+   ----------------------------------------------------------------------------
+   ONE place for every colour, radius, shadow and component style, so every
+   screen looks the same and the theme can be changed by editing the tokens
+   in section 1 only.
 
-/* Polish */
-.navbar.bg-dark { background: linear-gradient(90deg, #1b2a49, #2c4a7c) !important; }
-.card { border-radius: .75rem; }
-.kpi { border-left: 4px solid #adb5bd; transition: transform .12s ease, box-shadow .12s ease; }
-.kpi:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0, 0, 0, .12); }
-.kpi-primary { border-left-color: #0d6efd; }
-.kpi-success { border-left-color: #198754; }
-.kpi-warning { border-left-color: #ffc107; }
-.kpi-danger { border-left-color: #dc3545; }
-.kpi-info { border-left-color: #0dcaf0; }
-.kpi-secondary { border-left-color: #6c757d; }
+   How it works:
+   - Every page sets <html data-bs-theme="dark">, so Bootstrap 5.3 switches its
+     own forms, tables, dropdowns and alerts to dark mode.
+   - Section 2 then points Bootstrap's colour variables at OUR tokens, so the
+     whole of Bootstrap speaks the Midnight Emerald palette.
+   - Sections 3+ style our own components (.oa-*) using the same tokens.
+   No colour hex codes appear below section 1: everything uses var(--oa-*).
+   ========================================================================== */
+
+/* ------------------------------------------------------- 1. design tokens */
+
+:root {
+  /* Surfaces, darkest to lightest */
+  --oa-bg:            #101D1B;  /* page background            */
+  --oa-bg-2:          #162420;  /* navigation, secondary areas */
+  --oa-card:          #1C2C28;  /* cards, tables, panels       */
+  --oa-elevated:      #243832;  /* hover, dropdowns, inputs on cards */
+
+  /* Brand */
+  --oa-emerald:       #20B486;  /* primary actions, active states */
+  --oa-emerald-dark:  #167A5D;  /* pressed / gradients            */
+  --oa-gold:          #D6B875;  /* subtle highlights only         */
+
+  /* Text */
+  --oa-text:          #F0F5F2;  /* headings and body       */
+  --oa-text-2:        #A8B8B0;  /* labels, secondary text  */
+  --oa-muted:         #7F9389;  /* placeholders, hints on the page background */
+  --oa-on-emerald:    #101D1B;  /* text placed on emerald  */
+
+  /* Lines */
+  --oa-border:        #30443B;
+
+  /* Status */
+  --oa-success:       #20B486;
+  --oa-warning:       #E4B65B;
+  --oa-danger:        #E36D70;
+  --oa-info:          #73A9C6;
+  --oa-teal:          #2BB3B1;  /* "processing" - between info and success */
+  --oa-green:         #4CC38A;  /* "completed"                              */
+  --oa-grey:          #7F9389;  /* "cancelled"                              */
+
+  /* Lighter versions of the status colours, used as text on tinted badges
+     (all at least 5.6:1 contrast on their badge background). */
+  --oa-success-text:  #5FD3A9;
+  --oa-warning-text:  #EFCB80;
+  --oa-danger-text:   #F29C9E;
+  --oa-info-text:     #9CC5DB;
+  --oa-teal-text:     #6AD3CF;
+  --oa-green-text:    #86DDB0;
+  --oa-grey-text:     #C2CEC7;
+
+  /* Shape and depth */
+  --oa-radius:        12px;
+  --oa-radius-sm:     8px;
+  --oa-shadow:        0 1px 2px rgba(0, 0, 0, .28), 0 2px 8px rgba(0, 0, 0, .18);
+  --oa-shadow-lift:   0 10px 28px rgba(0, 0, 0, .38);
+  --oa-focus-ring:    0 0 0 3px color-mix(in srgb, var(--oa-emerald) 45%, transparent);
+
+  /* Typography */
+  --oa-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* -------------------------------- 2. Bootstrap mapped onto our tokens */
+/* Same specificity as Bootstrap's own [data-bs-theme=dark] block, but loaded
+   later, so these values win. */
+
+:root, [data-bs-theme=dark] {
+  color-scheme: dark;
+
+  --bs-body-bg: var(--oa-bg);
+  --bs-body-bg-rgb: 16, 29, 27;
+  --bs-body-color: var(--oa-text);
+  --bs-body-color-rgb: 240, 245, 242;
+  --bs-body-font-family: var(--oa-font);
+  --bs-emphasis-color: var(--oa-text);
+  --bs-emphasis-color-rgb: 240, 245, 242;
+  --bs-secondary-color: var(--oa-text-2);
+  --bs-secondary-color-rgb: 168, 184, 176;
+  --bs-secondary-bg: var(--oa-elevated);
+  --bs-tertiary-color: var(--oa-muted);
+  --bs-tertiary-bg: var(--oa-bg-2);
+  --bs-heading-color: var(--oa-text);
+  --bs-border-color: var(--oa-border);
+  --bs-border-color-translucent: color-mix(in srgb, var(--oa-border) 80%, transparent);
+  --bs-border-radius: var(--oa-radius-sm);
+
+  --bs-link-color: var(--oa-emerald);
+  --bs-link-color-rgb: 32, 180, 134;
+  --bs-link-hover-color: var(--oa-success-text);
+  --bs-link-hover-color-rgb: 95, 211, 169;
+
+  /* the theme colours behind .bg-*, .text-*, .border-* and alerts */
+  --bs-primary: var(--oa-emerald);      --bs-primary-rgb: 32, 180, 134;
+  --bs-success: var(--oa-success);      --bs-success-rgb: 32, 180, 134;
+  --bs-warning: var(--oa-warning);      --bs-warning-rgb: 228, 182, 91;
+  --bs-danger:  var(--oa-danger);       --bs-danger-rgb: 227, 109, 112;
+  --bs-info:    var(--oa-info);         --bs-info-rgb: 115, 169, 198;
+  --bs-secondary: var(--oa-grey);       --bs-secondary-rgb: 127, 147, 137;
+
+  --bs-primary-text-emphasis: var(--oa-success-text);
+  --bs-success-text-emphasis: var(--oa-success-text);
+  --bs-warning-text-emphasis: var(--oa-warning-text);
+  --bs-danger-text-emphasis:  var(--oa-danger-text);
+  --bs-info-text-emphasis:    var(--oa-info-text);
+  --bs-secondary-text-emphasis: var(--oa-grey-text);
+
+  --bs-primary-bg-subtle: color-mix(in srgb, var(--oa-emerald) 16%, var(--oa-card));
+  --bs-success-bg-subtle: color-mix(in srgb, var(--oa-success) 16%, var(--oa-card));
+  --bs-warning-bg-subtle: color-mix(in srgb, var(--oa-warning) 16%, var(--oa-card));
+  --bs-danger-bg-subtle:  color-mix(in srgb, var(--oa-danger) 16%, var(--oa-card));
+  --bs-info-bg-subtle:    color-mix(in srgb, var(--oa-info) 16%, var(--oa-card));
+  --bs-secondary-bg-subtle: var(--oa-elevated);
+
+  --bs-primary-border-subtle: color-mix(in srgb, var(--oa-emerald) 40%, var(--oa-card));
+  --bs-success-border-subtle: color-mix(in srgb, var(--oa-success) 40%, var(--oa-card));
+  --bs-warning-border-subtle: color-mix(in srgb, var(--oa-warning) 40%, var(--oa-card));
+  --bs-danger-border-subtle:  color-mix(in srgb, var(--oa-danger) 40%, var(--oa-card));
+  --bs-info-border-subtle:    color-mix(in srgb, var(--oa-info) 40%, var(--oa-card));
+  --bs-secondary-border-subtle: var(--oa-border);
+
+  --bs-form-valid-color: var(--oa-success-text);
+  --bs-form-valid-border-color: var(--oa-success);
+  --bs-form-invalid-color: var(--oa-danger-text);
+  --bs-form-invalid-border-color: var(--oa-danger);
+  --bs-focus-ring-color: color-mix(in srgb, var(--oa-emerald) 45%, transparent);
+}
+
+/* ------------------------------------------------------------ 3. base */
+
+body {
+  background: var(--oa-bg);
+  color: var(--oa-text);
+  font-family: var(--oa-font);
+  font-size: .94rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+  font-weight: 650; letter-spacing: -.015em; color: var(--oa-text);
+}
+a { text-decoration: none; }
+.text-muted, .text-secondary, .text-body-secondary { color: var(--oa-text-2) !important; }
+hr { border-color: var(--oa-border); opacity: 1; }
+code { color: var(--oa-gold); }
+::selection { background: color-mix(in srgb, var(--oa-emerald) 40%, transparent); }
+
+/* One visible keyboard focus style everywhere (mouse clicks don't show it). */
+:focus-visible { outline: 2px solid var(--oa-emerald); outline-offset: 2px; }
+.btn:focus-visible, .form-control:focus-visible, .form-select:focus-visible, .nav-link:focus-visible,
+.dropdown-item:focus-visible { outline: none; box-shadow: var(--oa-focus-ring); }
+
+/* tidy dark scrollbars (tables scroll sideways on phones) */
+* { scrollbar-color: var(--oa-border) transparent; }
+
+/* ----------------------------------------------------- 4. top navigation */
+
+.navbar.oa-nav {
+  background: var(--oa-bg-2);
+  border-bottom: 1px solid var(--oa-border);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, .28);
+  padding-top: .45rem;
+  padding-bottom: .45rem;
+  position: sticky; top: 0; z-index: 1030;
+}
+
+.oa-brand { display: flex; align-items: center; gap: .65rem; color: var(--oa-text); }
+.oa-brand:hover, .oa-brand:focus { color: var(--oa-text); }
+.oa-brand .oa-logo {
+  width: 36px; height: 36px; border-radius: 10px; flex: 0 0 36px;
+  background: linear-gradient(140deg, var(--oa-emerald), var(--oa-emerald-dark));
+  color: var(--oa-on-emerald);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--oa-gold) 55%, transparent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.oa-brand .oa-name { font-weight: 700; font-size: 1.02rem; line-height: 1.1; letter-spacing: .1px; }
+.oa-brand .oa-tagline {
+  display: block; font-size: .64rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--oa-gold);
+}
+
+.oa-nav .nav-link {
+  color: var(--oa-text);
+  opacity: .86;
+  font-weight: 500;
+  border-radius: var(--oa-radius-sm);
+  padding: .5rem .75rem;
+  display: flex; align-items: center; gap: .45rem;
+  position: relative;
+  transition: background-color .15s ease, color .15s ease, opacity .15s ease;
+}
+.oa-nav .nav-link i { font-size: 1rem; opacity: .9; }
+.oa-nav .nav-link:hover, .oa-nav .nav-link:focus { opacity: 1; color: var(--oa-text); background: var(--oa-card); }
+.oa-nav .nav-link.active, .oa-nav .nav-link.show {
+  opacity: 1; color: var(--oa-emerald); font-weight: 600;
+  background: color-mix(in srgb, var(--oa-emerald) 12%, transparent);
+}
+/* emerald indicator bar under the active item (desktop) / beside it (phone menu) */
+@media (min-width: 992px) {
+  .oa-nav .nav-link.active::after {
+    content: ""; position: absolute; left: .75rem; right: .75rem; bottom: -.5rem;
+    height: 3px; border-radius: 3px 3px 0 0; background: var(--oa-emerald);
+  }
+}
+@media (max-width: 991.98px) {
+  .oa-nav .navbar-collapse { padding: .5rem 0 .25rem; }
+  .oa-nav .nav-link.active { box-shadow: inset 3px 0 0 var(--oa-emerald); }
+  .oa-nav .oa-user { margin-top: .5rem; padding-top: .6rem; border-top: 1px solid var(--oa-border); }
+}
+
+.oa-nav .navbar-toggler { border-color: var(--oa-border); padding: .35rem .55rem; }
+.oa-nav .navbar-toggler:focus { box-shadow: var(--oa-focus-ring); }
+
+/* dropdown menus (Office menu, and any other) */
+.dropdown-menu {
+  --bs-dropdown-bg: var(--oa-elevated);
+  --bs-dropdown-border-color: var(--oa-border);
+  --bs-dropdown-link-color: var(--oa-text);
+  --bs-dropdown-link-hover-color: var(--oa-text);
+  --bs-dropdown-link-hover-bg: var(--oa-card);
+  --bs-dropdown-link-active-color: var(--oa-on-emerald);
+  --bs-dropdown-link-active-bg: var(--oa-emerald);
+  --bs-dropdown-divider-bg: var(--oa-border);
+  border-radius: var(--oa-radius);
+  box-shadow: var(--oa-shadow-lift);
+  padding: .4rem;
+  min-width: 14rem;
+}
+.dropdown-item { border-radius: 7px; padding: .5rem .65rem; font-weight: 500; display: flex; align-items: center; gap: .35rem; }
+.dropdown-item i { color: var(--oa-gold); width: 1.1rem; }
+.dropdown-item:hover i, .dropdown-item:focus i { color: var(--oa-emerald); }
+
+.oa-user { display: flex; align-items: center; gap: .6rem; }
+.oa-user .oa-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--oa-card); color: var(--oa-gold);
+  box-shadow: inset 0 0 0 1.5px var(--oa-gold);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .82rem; text-transform: uppercase;
+}
+.oa-user .oa-username { color: var(--oa-text); font-weight: 600; font-size: .86rem; }
+
+/* ------------------------------------------------------- 5. page header */
+
+.oa-page-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: .75rem; margin-bottom: 1.1rem;
+}
+.oa-page-head h1 { font-size: 1.35rem; margin: 0; }
+.oa-page-head .oa-sub { color: var(--oa-text-2); font-size: .85rem; margin-top: .2rem; }
+
+/* Pages that still use a plain "h1.h4 mb-3" heading get the same weight. */
+.container-xxl > h1.h4, .container-xxl > .d-flex > h1.h4 { font-size: 1.35rem; }
+
+/* ------------------------------------------------------------- 6. cards */
+
+.card {
+  --bs-card-bg: var(--oa-card);
+  --bs-card-border-color: var(--oa-border);
+  --bs-card-cap-bg: var(--oa-card);
+  --bs-card-color: var(--oa-text);
+  border-radius: var(--oa-radius);
+  box-shadow: var(--oa-shadow);
+}
+.card-header, .oa-card-head {
+  background: var(--oa-card); border-bottom: 1px solid var(--oa-border);
+  padding: .75rem 1rem; font-weight: 600; color: var(--oa-text);
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+}
+.oa-card-head i, .card-header i { color: var(--oa-gold); }
+.card-footer { background: var(--oa-bg-2); border-top-color: var(--oa-border); }
+.list-group {
+  --bs-list-group-bg: var(--oa-card);
+  --bs-list-group-border-color: var(--oa-border);
+  --bs-list-group-color: var(--oa-text);
+  --bs-list-group-action-hover-bg: var(--oa-elevated);
+}
+
+/* Summary / KPI tiles */
+.oa-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .85rem; margin-bottom: 1.1rem; }
+.oa-stat {
+  --oa-accent: var(--oa-emerald);
+  position: relative; overflow: hidden;
+  background: var(--oa-elevated);
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius);
+  box-shadow: var(--oa-shadow);
+  padding: .9rem 1rem .85rem;
+  display: block; color: inherit; min-width: 0;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+/* thin coloured accent line at the top of each tile */
+.oa-stat::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--oa-accent);
+}
+a.oa-stat:hover, a.oa-stat:focus-visible {
+  color: inherit; transform: translateY(-2px); box-shadow: var(--oa-shadow-lift);
+  border-color: color-mix(in srgb, var(--oa-accent) 55%, var(--oa-border));
+}
+.oa-stat .oa-stat-label {
+  font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--oa-text-2); display: flex; align-items: center; gap: .45rem;
+}
+.oa-stat .oa-stat-label i {
+  width: 26px; height: 26px; border-radius: 7px; flex: 0 0 26px;
+  display: inline-flex; align-items: center; justify-content: center; font-size: .85rem;
+  color: var(--oa-accent); background: color-mix(in srgb, var(--oa-accent) 16%, transparent);
+}
+.oa-stat .oa-stat-value {
+  display: block; font-size: 1.65rem; font-weight: 700; line-height: 1.15; margin-top: .45rem;
+  color: var(--oa-text); font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+}
+.oa-stat .oa-stat-foot { display: block; font-size: .76rem; color: var(--oa-text-2); margin-top: .15rem; }
+/* status accents: gold = waiting, info = submitted, emerald = approved/done, red = problem */
+.oa-stat.is-total     { --oa-accent: var(--oa-gold); }
+.oa-stat.is-pending   { --oa-accent: var(--oa-warning); }
+.oa-stat.is-submitted { --oa-accent: var(--oa-info); }
+.oa-stat.is-approved  { --oa-accent: var(--oa-emerald); }
+.oa-stat.is-done      { --oa-accent: var(--oa-green); }
+.oa-stat.is-bad       { --oa-accent: var(--oa-danger); }
+.oa-stat.is-money     { --oa-accent: var(--oa-gold); }
+
+/* owner dashboard tiles that use .kpi */
+.kpi { border-top: 3px solid var(--oa-border) !important; background: var(--oa-elevated); }
+.kpi-primary   { border-top-color: var(--oa-emerald) !important; }
+.kpi-success   { border-top-color: var(--oa-green) !important; }
+.kpi-warning   { border-top-color: var(--oa-warning) !important; }
+.kpi-danger    { border-top-color: var(--oa-danger) !important; }
+.kpi-info      { border-top-color: var(--oa-info) !important; }
+.kpi-secondary { border-top-color: var(--oa-gold) !important; }
+.kpi .card-body > .h3, .kpi .card-body > .h4, .kpi .card-body > .fs-3, .kpi .card-body > .display-6 {
+  font-variant-numeric: tabular-nums;
+}
 .chart-box { position: relative; height: 260px; }
-.welcome { background: linear-gradient(135deg, #1b2a49, #3b6ea5); color: #fff; border-radius: .75rem; padding: 1.5rem; }
-.welcome .role { opacity: .8; }
-.tile { text-decoration: none; color: inherit; }
-.tile .card { transition: transform .12s ease, box-shadow .12s ease; }
-.tile:hover .card { transform: translateY(-3px); box-shadow: 0 6px 14px rgba(0, 0, 0, .15); }
-.tile .icon { font-size: 2rem; }
-.table thead th { background: #eef1f6; }
+
+/* --------------------------------------------------------- 7. progress */
+
+.progress, .progress-stacked {
+  --bs-progress-bg: var(--oa-bg);
+  --bs-progress-bar-bg: var(--oa-emerald);
+  --bs-progress-height: .5rem;
+  border-radius: 99px;
+}
+.oa-progress { height: 6px; width: 90px; max-width: 100%; }
+.oa-progress .progress-bar.is-low { background: var(--oa-warning); }
+
+/* ------------------------------------------------------------ 8. tables */
+
+.oa-table-card {
+  background: var(--oa-card); border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius); box-shadow: var(--oa-shadow); overflow: hidden;
+}
+.oa-table-card.table-responsive { overflow-x: auto; }
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--oa-text);
+  --bs-table-border-color: color-mix(in srgb, var(--oa-border) 70%, transparent);
+  --bs-table-hover-bg: color-mix(in srgb, var(--oa-emerald) 9%, transparent);
+  --bs-table-hover-color: var(--oa-text);
+  --bs-table-striped-bg: color-mix(in srgb, var(--oa-elevated) 50%, transparent);
+  margin-bottom: 0;
+}
+.table > thead > tr > th {
+  background: var(--oa-bg-2); color: var(--oa-text-2);
+  font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  border-bottom: 1px solid var(--oa-border); white-space: nowrap; padding: .7rem .8rem;
+}
+.table > tbody > tr > td, .table > tbody > tr > th { padding: .65rem .8rem; vertical-align: middle; }
+.table > tbody > tr:last-child > td { border-bottom: 0; }
+.table-hover > tbody > tr { transition: background-color .12s ease; }
+.table-hover > tbody > tr:hover > * { box-shadow: inset 0 0 0 9999px var(--bs-table-hover-bg); }
+.table > tfoot > tr > th, .table > tfoot > tr > td {
+  background: var(--oa-bg-2); border-top: 1px solid var(--oa-border); border-bottom: 0;
+  padding: .7rem .8rem; color: var(--oa-text);
+}
+.table-sm > :not(caption) > * > * { padding: .45rem .6rem; }
+/* totals row in reports, shortage row on an order */
+.table > tbody > tr.table-light > *, .oa-total-row > * {
+  --bs-table-bg-type: var(--oa-bg-2); --bs-table-color-type: var(--oa-text); color: var(--oa-text);
+}
+.table > tbody > tr.table-danger > * {
+  --bs-table-bg-type: color-mix(in srgb, var(--oa-danger) 14%, transparent);
+  --bs-table-color-type: var(--oa-text); color: var(--oa-text);
+}
+.oa-id { font-weight: 650; color: var(--oa-emerald); white-space: nowrap; }
+.oa-sub-cell { font-size: .77rem; color: var(--oa-text-2); }
+.money, .text-end { font-variant-numeric: tabular-nums; }
+.money { white-space: nowrap; }
+
+/* ------------------------------------------------------------ 9. badges */
+
+.badge {
+  font-weight: 600; letter-spacing: .02em; padding: .38em .62em; border-radius: 6px;
+  border: 1px solid transparent;
+}
+.oa-badge { display: inline-flex; align-items: center; gap: .32rem; }
+
+/* status colour recipe: tinted fill + coloured border + lighter text.
+   Every status badge also carries an icon AND its word, so colour is never the only signal. */
+.status-SUBMITTED, .status-PENDING, .status-APPROVED, .status-INVOICED, .status-PROCESSING,
+.status-DISPATCHED, .status-COMPLETED, .status-POSTED, .status-ISSUED, .status-ACTIVE,
+.status-REJECTED, .status-OVERDUE, .status-CANCELLED, .status-REVERSED, .status-INACTIVE, .status-FLAGGED {
+  --oa-s: var(--oa-grey); --oa-s-text: var(--oa-grey-text);
+  background: color-mix(in srgb, var(--oa-s) 16%, var(--oa-card));
+  border-color: color-mix(in srgb, var(--oa-s) 45%, var(--oa-card));
+  color: var(--oa-s-text);
+}
+.status-SUBMITTED  { --oa-s: var(--oa-info);    --oa-s-text: var(--oa-info-text); }
+.status-PENDING    { --oa-s: var(--oa-warning); --oa-s-text: var(--oa-warning-text); }
+.status-APPROVED   { --oa-s: var(--oa-emerald); --oa-s-text: var(--oa-success-text); }
+.status-INVOICED, .status-PROCESSING
+                   { --oa-s: var(--oa-teal);    --oa-s-text: var(--oa-teal-text); }
+.status-DISPATCHED, .status-COMPLETED, .status-POSTED, .status-ISSUED, .status-ACTIVE
+                   { --oa-s: var(--oa-green);   --oa-s-text: var(--oa-green-text); }
+.status-REJECTED, .status-OVERDUE, .status-FLAGGED
+                   { --oa-s: var(--oa-danger);  --oa-s-text: var(--oa-danger-text); }
+.status-CANCELLED, .status-REVERSED, .status-INACTIVE
+                   { --oa-s: var(--oa-grey);    --oa-s-text: var(--oa-grey-text); }
+
+/* Bootstrap's solid badge colours, re-done as the same tinted style */
+.badge.bg-success, .badge.text-bg-success { background: color-mix(in srgb, var(--oa-green) 16%, var(--oa-card)) !important; border-color: color-mix(in srgb, var(--oa-green) 45%, var(--oa-card)); color: var(--oa-green-text) !important; }
+.badge.bg-danger, .badge.text-bg-danger   { background: color-mix(in srgb, var(--oa-danger) 16%, var(--oa-card)) !important; border-color: color-mix(in srgb, var(--oa-danger) 45%, var(--oa-card)); color: var(--oa-danger-text) !important; }
+.badge.bg-warning, .badge.text-bg-warning { background: color-mix(in srgb, var(--oa-warning) 16%, var(--oa-card)) !important; border-color: color-mix(in srgb, var(--oa-warning) 45%, var(--oa-card)); color: var(--oa-warning-text) !important; }
+.badge.bg-info, .badge.text-bg-info       { background: color-mix(in srgb, var(--oa-info) 16%, var(--oa-card)) !important; border-color: color-mix(in srgb, var(--oa-info) 45%, var(--oa-card)); color: var(--oa-info-text) !important; }
+.badge.bg-primary, .badge.text-bg-primary { background: color-mix(in srgb, var(--oa-emerald) 16%, var(--oa-card)) !important; border-color: color-mix(in srgb, var(--oa-emerald) 45%, var(--oa-card)); color: var(--oa-success-text) !important; }
+.badge.bg-secondary, .badge.text-bg-secondary, .badge.bg-dark, .badge.bg-light {
+  background: var(--oa-elevated) !important; border-color: var(--oa-border); color: var(--oa-text-2) !important;
+}
+/* neutral label chip (item type, counts, audit action) */
+.oa-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: var(--oa-elevated); border: 1px solid var(--oa-border); color: var(--oa-text-2);
+  font-size: .72rem; font-weight: 600; letter-spacing: .04em; border-radius: 6px; padding: .22rem .5rem;
+}
+.oa-chip.is-gold { color: var(--oa-gold); border-color: color-mix(in srgb, var(--oa-gold) 40%, var(--oa-card)); }
+.oa-chip.is-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0; }
+
+/* ------------------------------------------------- 10. forms and inputs */
+
+.form-label, .oa-filters label {
+  font-size: .76rem; font-weight: 600; letter-spacing: .03em; color: var(--oa-text-2); margin-bottom: .3rem;
+}
+.oa-filters label { text-transform: uppercase; letter-spacing: .06em; font-size: .7rem; }
+.form-control, .form-select {
+  background-color: var(--oa-bg);
+  border: 1px solid var(--oa-border);
+  color: var(--oa-text);
+  border-radius: var(--oa-radius-sm);
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.card .form-control, .card .form-select, .oa-filters .form-control, .oa-filters .form-select { background-color: var(--oa-bg); }
+.form-control::placeholder { color: var(--oa-muted); opacity: 1; }
+.form-control:hover, .form-select:hover { border-color: color-mix(in srgb, var(--oa-emerald) 35%, var(--oa-border)); }
+.form-control:focus, .form-select:focus {
+  background-color: var(--oa-bg); color: var(--oa-text);
+  border-color: var(--oa-emerald); box-shadow: var(--oa-focus-ring);
+}
+.form-control:disabled, .form-select:disabled, .form-control[readonly] {
+  background-color: var(--oa-bg-2); color: var(--oa-text-2); opacity: 1;
+}
+.form-select option { background: var(--oa-card); color: var(--oa-text); }
+/* calendar icon in date inputs, readable on dark */
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.8) sepia(.3) hue-rotate(100deg); cursor: pointer; }
+.input-group-text { background: var(--oa-elevated); border-color: var(--oa-border); color: var(--oa-text-2); }
+.form-text { color: var(--oa-text-2); }
+.form-check-input { background-color: var(--oa-bg); border-color: var(--oa-border); }
+.form-check-input:checked { background-color: var(--oa-emerald); border-color: var(--oa-emerald); }
+.form-check-input:focus { border-color: var(--oa-emerald); box-shadow: var(--oa-focus-ring); }
+.form-control.is-invalid, .form-select.is-invalid { border-color: var(--oa-danger); }
+.invalid-feedback { color: var(--oa-danger-text); }
+/* fields marked required show a small gold star after their label */
+.form-label.required::after, label:has(+ [required]).form-label::after,
+label:has(+ .input-group [required]).form-label::after { content: " *"; color: var(--oa-gold); font-weight: 700; }
+
+.oa-filters {
+  background: var(--oa-card); border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius); box-shadow: var(--oa-shadow);
+  padding: .85rem; margin-bottom: 1.1rem;
+}
+
+/* ----------------------------------------------------------- 11. buttons */
+
+.btn {
+  border-radius: var(--oa-radius-sm); font-weight: 600;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+.btn:active { transform: translateY(1px); }
+.btn i { pointer-events: none; }
+
+/* PRIMARY - emerald with dark text */
+.btn-primary, .btn-success {
+  --bs-btn-color: var(--oa-on-emerald);
+  --bs-btn-bg: var(--oa-emerald);
+  --bs-btn-border-color: var(--oa-emerald);
+  --bs-btn-hover-color: var(--oa-on-emerald);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--oa-emerald) 85%, white);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--oa-emerald) 85%, white);
+  --bs-btn-active-color: var(--oa-on-emerald);
+  --bs-btn-active-bg: var(--oa-emerald-dark);
+  --bs-btn-active-border-color: var(--oa-emerald-dark);
+  --bs-btn-disabled-color: var(--oa-on-emerald);
+  --bs-btn-disabled-bg: var(--oa-emerald-dark);
+  --bs-btn-disabled-border-color: var(--oa-emerald-dark);
+  --bs-btn-focus-shadow-rgb: 32, 180, 134;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .12) inset, 0 2px 8px color-mix(in srgb, var(--oa-emerald) 25%, transparent);
+}
+/* SECONDARY - dark elevated with light text */
+.btn-secondary, .btn-dark, .btn-light {
+  --bs-btn-color: var(--oa-text);
+  --bs-btn-bg: var(--oa-elevated);
+  --bs-btn-border-color: var(--oa-border);
+  --bs-btn-hover-color: var(--oa-text);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--oa-elevated) 80%, white);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--oa-emerald) 40%, var(--oa-border));
+  --bs-btn-active-color: var(--oa-text);
+  --bs-btn-active-bg: var(--oa-card);
+  --bs-btn-active-border-color: var(--oa-border);
+}
+/* OUTLINE - emerald border and text */
+.btn-outline-primary, .btn-outline-success {
+  --bs-btn-color: var(--oa-emerald);
+  --bs-btn-border-color: color-mix(in srgb, var(--oa-emerald) 60%, var(--oa-border));
+  --bs-btn-hover-color: var(--oa-on-emerald);
+  --bs-btn-hover-bg: var(--oa-emerald);
+  --bs-btn-hover-border-color: var(--oa-emerald);
+  --bs-btn-active-color: var(--oa-on-emerald);
+  --bs-btn-active-bg: var(--oa-emerald-dark);
+  --bs-btn-active-border-color: var(--oa-emerald-dark);
+  --bs-btn-focus-shadow-rgb: 32, 180, 134;
+}
+/* quiet outline used for "Open", "History", "Back" - looks like the secondary button */
+.btn-outline-secondary, .btn-outline-dark, .btn-outline-light {
+  --bs-btn-color: var(--oa-text);
+  --bs-btn-border-color: var(--oa-border);
+  --bs-btn-bg: color-mix(in srgb, var(--oa-elevated) 55%, transparent);
+  --bs-btn-hover-color: var(--oa-text);
+  --bs-btn-hover-bg: var(--oa-elevated);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--oa-emerald) 50%, var(--oa-border));
+  --bs-btn-active-color: var(--oa-text);
+  --bs-btn-active-bg: var(--oa-card);
+  --bs-btn-active-border-color: var(--oa-emerald);
+}
+/* DANGER - red border, fills red on hover */
+.btn-danger, .btn-outline-danger {
+  --bs-btn-color: var(--oa-danger-text);
+  --bs-btn-bg: color-mix(in srgb, var(--oa-danger) 12%, transparent);
+  --bs-btn-border-color: color-mix(in srgb, var(--oa-danger) 60%, var(--oa-border));
+  --bs-btn-hover-color: var(--oa-on-emerald);
+  --bs-btn-hover-bg: var(--oa-danger);
+  --bs-btn-hover-border-color: var(--oa-danger);
+  --bs-btn-active-color: var(--oa-on-emerald);
+  --bs-btn-active-bg: color-mix(in srgb, var(--oa-danger) 85%, black);
+  --bs-btn-active-border-color: var(--oa-danger);
+  --bs-btn-focus-shadow-rgb: 227, 109, 112;
+}
+.btn-warning, .btn-outline-warning {
+  --bs-btn-color: var(--oa-warning-text);
+  --bs-btn-bg: color-mix(in srgb, var(--oa-warning) 12%, transparent);
+  --bs-btn-border-color: color-mix(in srgb, var(--oa-warning) 60%, var(--oa-border));
+  --bs-btn-hover-color: var(--oa-on-emerald);
+  --bs-btn-hover-bg: var(--oa-warning);
+  --bs-btn-hover-border-color: var(--oa-warning);
+}
+/* GHOST - transparent with readable text */
+.btn-link, .btn-ghost {
+  --bs-btn-color: var(--oa-text-2);
+  --bs-btn-hover-color: var(--oa-emerald);
+  --bs-btn-active-color: var(--oa-emerald);
+  --bs-btn-disabled-color: var(--oa-muted);
+  background: transparent; border-color: transparent; text-decoration: none; box-shadow: none;
+}
+.btn-ghost:hover { background: var(--oa-card); }
+
+.btn-lg-touch { min-height: 3rem; font-size: 1.05rem; }
+.btn-group > .btn { box-shadow: none; }
+
+/* --------------------------------------------- 12. empty states, alerts */
+
+.oa-empty { text-align: center; padding: 2rem 1rem; color: var(--oa-text-2); }
+.oa-empty i {
+  font-size: 1.5rem; color: var(--oa-gold); display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 50%; margin-bottom: .6rem;
+  background: color-mix(in srgb, var(--oa-gold) 12%, transparent);
+}
+.oa-empty .oa-empty-title { font-weight: 600; color: var(--oa-text); }
+
+.alert {
+  border: 1px solid transparent; border-left-width: 4px; border-radius: var(--oa-radius);
+  box-shadow: var(--oa-shadow); display: flex; align-items: flex-start; gap: .55rem;
+}
+.alert-success { background: color-mix(in srgb, var(--oa-success) 12%, var(--oa-card)); color: var(--oa-text); border-color: color-mix(in srgb, var(--oa-success) 45%, var(--oa-card)); border-left-color: var(--oa-success); }
+.alert-success i { color: var(--oa-success-text); }
+.alert-danger { background: color-mix(in srgb, var(--oa-danger) 12%, var(--oa-card)); color: var(--oa-text); border-color: color-mix(in srgb, var(--oa-danger) 45%, var(--oa-card)); border-left-color: var(--oa-danger); }
+.alert-danger i { color: var(--oa-danger-text); }
+.alert-warning { background: color-mix(in srgb, var(--oa-warning) 12%, var(--oa-card)); color: var(--oa-text); border-color: color-mix(in srgb, var(--oa-warning) 45%, var(--oa-card)); border-left-color: var(--oa-warning); }
+.alert-info, .alert-secondary { background: var(--oa-card); color: var(--oa-text); border-color: var(--oa-border); border-left-color: var(--oa-info); }
+
+/* modals (Bootstrap ones, if a page adds them) */
+.modal { --bs-modal-bg: var(--oa-card); --bs-modal-border-color: var(--oa-border); --bs-modal-header-border-color: var(--oa-border); --bs-modal-footer-border-color: var(--oa-border); }
+.modal-content { border-radius: var(--oa-radius); box-shadow: var(--oa-shadow-lift); }
+.btn-close { filter: invert(1) grayscale(1) brightness(1.6); }
+
+/* pagination (if a list grows long enough to page) */
+.pagination {
+  --bs-pagination-bg: var(--oa-card); --bs-pagination-color: var(--oa-text); --bs-pagination-border-color: var(--oa-border);
+  --bs-pagination-hover-bg: var(--oa-elevated); --bs-pagination-hover-color: var(--oa-emerald); --bs-pagination-hover-border-color: var(--oa-border);
+  --bs-pagination-active-bg: var(--oa-emerald); --bs-pagination-active-border-color: var(--oa-emerald); --bs-pagination-active-color: var(--oa-on-emerald);
+  --bs-pagination-disabled-bg: var(--oa-bg-2); --bs-pagination-disabled-color: var(--oa-muted); --bs-pagination-disabled-border-color: var(--oa-border);
+}
+
+/* loading spinner inside buttons after a form is sent */
+.spinner-border { --bs-spinner-border-width: .16em; }
+
+/* -------------------------------------------------------- 13. order entry */
+
+.qty-input { font-size: 1.25rem; text-align: center; min-height: 3rem; font-variant-numeric: tabular-nums; font-weight: 600; }
+.oa-product-row {
+  border: 1px solid var(--oa-border); border-radius: var(--oa-radius);
+  padding: .7rem .8rem; background: var(--oa-elevated);
+  transition: border-color .15s ease;
+}
+.oa-product-row:focus-within { border-color: var(--oa-emerald); }
+.oa-product-row + .oa-product-row { margin-top: .55rem; }
+
+/* ---------------------------------------------------- 14. home / welcome */
+
+.welcome {
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--oa-emerald) 28%, transparent), transparent 55%),
+    linear-gradient(120deg, var(--oa-bg-2), color-mix(in srgb, var(--oa-emerald-dark) 55%, var(--oa-bg-2)));
+  border: 1px solid var(--oa-border);
+  color: var(--oa-text);
+  border-radius: var(--oa-radius);
+  padding: 1.25rem 1.4rem;
+  box-shadow: var(--oa-shadow);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem;
+}
+.welcome h1 { font-size: 1.45rem; margin: 0; }
+.welcome .role { color: var(--oa-text-2); font-size: .9rem; margin-top: .2rem; }
+.welcome .oa-eyebrow {
+  font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--oa-gold);
+  margin-bottom: .25rem; display: block;
+}
+.welcome .oa-date { color: var(--oa-text-2); font-size: .84rem; display: flex; align-items: center; gap: .4rem; }
+.welcome .oa-date i { color: var(--oa-gold); }
+
+.oa-section-title {
+  font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--oa-text-2); margin: 0 0 .6rem; display: flex; align-items: center; gap: .4rem;
+}
+.oa-section-title::after { content: ""; flex: 1; height: 1px; background: var(--oa-border); margin-left: .5rem; }
+
+.tile { color: inherit; display: block; height: 100%; }
+.tile:hover, .tile:focus { color: inherit; }
+.tile .card { height: 100%; transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+.tile:hover .card, .tile:focus-visible .card {
+  transform: translateY(-2px); box-shadow: var(--oa-shadow-lift);
+  border-color: color-mix(in srgb, var(--oa-emerald) 55%, var(--oa-border));
+}
+.tile .icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; color: var(--oa-emerald);
+  background: color-mix(in srgb, var(--oa-emerald) 14%, transparent);
+}
+.tile:hover .icon { color: var(--oa-on-emerald); background: var(--oa-emerald); }
+.tile h2 { color: var(--oa-text); }
+
+/* Recipes / setup cards */
+.recipe-card { background: var(--oa-card); }
+
+/* ---------------------------------------------- 15. order progress steps */
+
+.oa-steps { display: flex; flex-direction: row; flex-wrap: wrap; gap: .45rem; padding: .7rem .8rem; background: var(--oa-card); }
+.oa-step {
+  flex: 1 1 130px; display: flex; align-items: center; gap: .45rem;
+  font-size: .82rem; font-weight: 600; color: var(--oa-text-2);
+  background: var(--oa-bg-2); border: 1px solid var(--oa-border); border-radius: var(--oa-radius-sm);
+  padding: .5rem .65rem;
+}
+.oa-step i { color: var(--oa-muted); }
+.oa-step.is-done {
+  color: var(--oa-success-text);
+  background: color-mix(in srgb, var(--oa-emerald) 12%, var(--oa-card));
+  border-color: color-mix(in srgb, var(--oa-emerald) 45%, var(--oa-card));
+}
+.oa-step.is-done i { color: var(--oa-emerald); }
+
+/* --------------------------------------------------------- 16. login */
+
+body.oa-login {
+  min-height: 100vh;
+  background:
+    radial-gradient(70% 60% at 85% 10%, color-mix(in srgb, var(--oa-emerald) 22%, transparent), transparent 60%),
+    radial-gradient(60% 50% at 10% 100%, color-mix(in srgb, var(--oa-gold) 10%, transparent), transparent 60%),
+    var(--oa-bg);
+}
+.oa-login-box { width: 100%; max-width: 420px; margin: 0 auto; padding: 8vh 1rem 2rem; }
+.oa-login-box .card { box-shadow: 0 24px 60px rgba(0, 0, 0, .5); border-color: var(--oa-border); }
+.oa-brand-dark { color: var(--oa-text); }
+.oa-brand-dark .oa-tagline { color: var(--oa-gold); }
+
+/* --------------------------------------------------------- 17. responsive */
+
+@media (max-width: 575.98px) {
+  .oa-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; }
+  .oa-stat { padding: .75rem .8rem .7rem; }
+  .oa-stat .oa-stat-value { font-size: 1.25rem; }
+  .oa-stat .oa-stat-label { font-size: .66rem; }
+  .oa-page-head h1, .container-xxl > h1.h4 { font-size: 1.18rem; }
+  .welcome { padding: 1rem 1.05rem; }
+  .welcome h1 { font-size: 1.2rem; }
+  .oa-brand .oa-tagline { display: none; }
+}
+
+/* People who asked their system for less motion get none. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* Bootstrap's coloured table rows have light backgrounds baked in; make them dark. */
+.table > tbody > tr.table-danger, .table > tbody > tr.table-light, .table > tbody > tr.table-warning,
+.table > tbody > tr.table-success, .table > tbody > tr.table-info {
+  --bs-table-bg: transparent; --bs-table-color: var(--oa-text); --bs-table-border-color: color-mix(in srgb, var(--oa-border) 70%, transparent);
+}
+.dropdown-item.active i, .dropdown-item:active i { color: var(--oa-on-emerald); }
+/* long rupee amounts in tiles: a little smaller, and allowed to wrap instead of overflowing */
+.oa-stat .oa-stat-value.money { font-size: 1.4rem; }
+.oa-stat .oa-stat-value { overflow-wrap: anywhere; }
+@media (max-width: 575.98px) { .oa-stat .oa-stat-value.money { font-size: 1.05rem; } }
+/* buttons inside table rows never wrap onto two lines (the table scrolls sideways instead) */
+.table .btn { white-space: nowrap; }

@@ -30,7 +30,7 @@ public class ItemAdminController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("items", stockQuery.allItems());
+        model.addAttribute("items", itemService.all());
         model.addAttribute("types", ItemType.values());
         model.addAttribute("units", List.of(Unit.GRAM, Unit.MILLILITRE, Unit.PIECE, Unit.PACKET));
         return "admin/items";
@@ -44,6 +44,31 @@ public class ItemAdminController {
             itemService.create(name, type, baseUnit, hsnCode, new BigDecimal(gstRate.trim()));
             redirect.addFlashAttribute("message", "Item added.");
         } catch (DuplicateItemException | IllegalArgumentException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/items";
+    }
+
+    @PostMapping("/{id}")
+    public String update(@org.springframework.web.bind.annotation.PathVariable long id,
+                         @RequestParam(required = false) String hsnCode, @RequestParam String gstRate,
+                         RedirectAttributes redirect) {
+        try {
+            itemService.updateTaxDetails(id, hsnCode, new BigDecimal(gstRate.trim()));
+            redirect.addFlashAttribute("message", "Item updated. Invoices already raised keep their old rate.");
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/items";
+    }
+
+    @PostMapping("/{id}/active")
+    public String setActive(@org.springframework.web.bind.annotation.PathVariable long id,
+                            @RequestParam boolean active, RedirectAttributes redirect) {
+        try {
+            itemService.setActive(id, active);
+            redirect.addFlashAttribute("message", active ? "Item switched on." : "Item switched off.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
             redirect.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/items";

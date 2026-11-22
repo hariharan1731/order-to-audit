@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Recipes and packs')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
+<div class="container-xxl">
   <h1 class="h4 mb-3">Recipes and packs</h1>
   <p class="text-muted">One recipe makes a bulk batch; each pack configuration says how that bulk is packed and which packaging it uses.
     These drive the production plan and the costing.</p>
@@ -23,6 +23,48 @@
     </div>
   </div>
   <p class="text-muted" th:if="${#lists.isEmpty(recipes)}">No recipes yet.</p>
+
+  <h2 class="h5 mt-4">Add a recipe</h2>
+  <p class="text-muted small">Quantities are for one bulk batch, in kg or litres. Tolerance is optional (blank = the default 3%).</p>
+  <form class="card p-3 mb-4" id="recipe-form" method="post" th:action="@{/admin/setup/recipes}">
+    <div class="row g-3">
+      <div class="col-12 col-md-5"><label class="form-label" for="recipeName">Recipe name</label><input class="form-control" id="recipeName" name="name" required></div>
+      <div class="col-6 col-md-3"><label class="form-label" for="bulkYieldKg">Batch makes (kg)</label><input class="form-control" id="bulkYieldKg" name="bulkYieldKg" required></div>
+      <div class="col-6 col-md-3"><label class="form-label" for="tolerancePct">Tolerance % (optional)</label><input class="form-control" id="tolerancePct" name="tolerancePct"></div>
+    </div>
+    <table class="table mt-3 align-middle">
+      <thead><tr><th>Raw material</th><th>Quantity per batch (kg / L)</th></tr></thead>
+      <tbody><tr th:each="n : ${recipeRows}">
+        <td><select class="form-select" name="itemId" th:id="'r-item-' + ${n}"><option value="">-</option>
+          <option th:each="c : ${rawItems}" th:value="${c.id}" th:text="${c.name} + ' (' + ${c.unit} + ')'">Flour (kg)</option></select></td>
+        <td><input class="form-control" name="quantity" th:id="'r-qty-' + ${n}"></td>
+      </tr></tbody>
+    </table>
+    <div><button class="btn btn-primary" id="save-recipe" type="submit">Save recipe</button></div>
+  </form>
+
+  <h2 class="h5">Add a pack configuration</h2>
+  <p class="text-muted small">Links a finished product to a recipe and says which packaging each packet or carton uses.</p>
+  <form class="card p-3" id="pack-form" method="post" th:action="@{/admin/setup/packs}">
+    <div class="row g-3">
+      <div class="col-12 col-md-4"><label class="form-label" for="finishedItemId">Finished product</label>
+        <select class="form-select" id="finishedItemId" name="finishedItemId"><option th:each="c : ${finishedItems}" th:value="${c.id}" th:text="${c.name}">Murukku</option></select></div>
+      <div class="col-12 col-md-4"><label class="form-label" for="recipeId">Recipe</label>
+        <select class="form-select" id="recipeId" name="recipeId"><option th:each="r : ${recipes}" th:value="${r.id}" th:text="${r.name}">Murukku base</option></select></div>
+      <div class="col-6 col-md-2"><label class="form-label" for="packSizeGrams">Pack size (g)</label><input class="form-control" type="number" min="1" id="packSizeGrams" name="packSizeGrams" required></div>
+      <div class="col-6 col-md-2"><label class="form-label" for="packetsPerCarton">Packets / carton</label><input class="form-control" type="number" min="1" id="packetsPerCarton" name="packetsPerCarton" required></div>
+    </div>
+    <table class="table mt-3 align-middle">
+      <thead><tr><th>Packaging item</th><th>Quantity</th><th>Used</th></tr></thead>
+      <tbody><tr th:each="n : ${packRows}">
+        <td><select class="form-select" name="itemId" th:id="'p-item-' + ${n}"><option value="">-</option>
+          <option th:each="c : ${packagingItems}" th:value="${c.id}" th:text="${c.name}">Pouch</option></select></td>
+        <td><input class="form-control" type="number" min="1" name="quantity" th:id="'p-qty-' + ${n}"></td>
+        <td><select class="form-select" name="basis" th:id="'p-basis-' + ${n}"><option value="PER_PACKET">per packet</option><option value="PER_CARTON">per carton</option></select></td>
+      </tr></tbody>
+    </table>
+    <div><button class="btn btn-primary" id="save-pack" type="submit">Save pack configuration</button></div>
+  </form>
 </div>
 <th:block th:replace="~{fragments :: scripts}"></th:block>
 </body>

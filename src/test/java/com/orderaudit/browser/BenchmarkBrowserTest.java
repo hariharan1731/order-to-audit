@@ -222,4 +222,22 @@ class BenchmarkBrowserTest {
         var owner = page.navigate(url("/owner"));
         assertThat(owner.status()).isEqualTo(403);
     }
+
+    @Test
+    @Order(11)
+    void distributorBOrderOfOneHundredTwentyIsShortByThirtyTwo() {
+        loginAs("ravi");
+        page.navigate(url("/sales/orders/new"));
+        page.selectOption("#customerId", new com.microsoft.playwright.options.SelectOption().setLabel("Distributor B"));
+        page.fill("input.qty-input", "120");
+        page.click("button[type=submit]:has-text('Send for approval')");
+        context.clearCookies();
+
+        loginAs("admin");
+        page.navigate(url("/admin/orders"));
+        page.locator("tr:has-text('Distributor B') a[href^='/admin/orders/']").first().click();
+        assertThat(page.locator("body")).containsText("short 32");
+        assertThat(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Approve"))).isDisabled();
+        shot("distributor-b-shortage");
+    }
 }

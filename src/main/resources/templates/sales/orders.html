@@ -1,27 +1,132 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('My orders')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 m-0">My orders</h1>
-    <a class="btn btn-primary btn-lg-touch" th:href="@{/sales/orders/new}">+ New order</a>
+<div class="container-xxl">
+
+  <div class="oa-page-head">
+    <div th:replace="~{fragments :: pageHead('My orders', 'Every order you placed, newest first')}"></div>
+    <a class="btn btn-primary btn-lg-touch" th:href="@{/sales/orders/new}">
+      <i class="bi bi-plus-lg me-1"></i>New order</a>
   </div>
-  <p class="text-muted" th:if="${#lists.isEmpty(orders)}">You have not placed any orders yet.</p>
-  <div class="list-group" th:unless="${#lists.isEmpty(orders)}">
-    <a class="list-group-item list-group-item-action" th:each="o : ${orders}" th:href="@{/sales/orders/{id}(id=${o.id})}">
-      <div class="d-flex justify-content-between">
-        <strong th:text="'#' + ${o.id} + ' - ' + ${o.customerName}">#1 - Retailer A</strong>
-        <span class="badge" th:classappend="'status-' + ${o.status}" th:text="${o.status}">SUBMITTED</span>
-      </div>
-      <div class="text-muted small">
-        <span th:text="${@fmt.number(o.packets)} + ' packets'">150 packets</span> &middot;
-        <span class="money" th:text="${@fmt.rupees(o.totalPaise)} + ' + GST'">Rs 7,500.00</span> &middot;
-        <span th:text="${@fmt.dateTime(o.createdAt)}">date</span>
-      </div>
+
+  <!-- Summary cards. Each one is a shortcut: clicking it filters the table below. -->
+  <div class="oa-stats">
+    <a class="oa-stat is-total" th:href="@{/sales/orders}">
+      <span class="oa-stat-label"><i class="bi bi-collection"></i> Total orders</span>
+      <span class="oa-stat-value" id="stat-total" th:text="${stats.total}">0</span>
+      <span class="oa-stat-foot">all time</span>
     </a>
+    <div class="oa-stat is-pending">
+      <span class="oa-stat-label"><i class="bi bi-clock-history"></i> Pending</span>
+      <span class="oa-stat-value" id="stat-pending" th:text="${stats.pending()}">0</span>
+      <span class="oa-stat-foot">not dispatched yet</span>
+    </div>
+    <a class="oa-stat is-submitted" th:href="@{/sales/orders(status='SUBMITTED')}">
+      <span class="oa-stat-label"><i class="bi bi-hourglass-split"></i> Submitted</span>
+      <span class="oa-stat-value" id="stat-submitted" th:text="${stats.submitted}">0</span>
+      <span class="oa-stat-foot">waiting approval</span>
+    </a>
+    <a class="oa-stat is-approved" th:href="@{/sales/orders(status='APPROVED')}">
+      <span class="oa-stat-label"><i class="bi bi-check2-circle"></i> Approved</span>
+      <span class="oa-stat-value" id="stat-approved" th:text="${stats.approved}">0</span>
+      <span class="oa-stat-foot">waiting invoice</span>
+    </a>
+    <a class="oa-stat is-done" th:href="@{/sales/orders(status='DISPATCHED')}">
+      <span class="oa-stat-label"><i class="bi bi-truck"></i> Completed</span>
+      <span class="oa-stat-value" id="stat-completed" th:text="${stats.completed()}">0</span>
+      <span class="oa-stat-foot">dispatched</span>
+    </a>
+  </div>
+
+  <!-- Search and filter. Plain GET form: the address bar keeps the filter, so the page can be shared or bookmarked. -->
+  <form class="oa-filters" method="get" th:action="@{/sales/orders}" id="order-filters">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4">
+        <label for="q">Search</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input class="form-control" id="q" name="q" th:value="${filter.q}" placeholder="Order number or retailer">
+        </div>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="status">Status</label>
+        <select class="form-select" id="status" name="status">
+          <option value="">Any status</option>
+          <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                  th:selected="${filter.status != null and filter.status == s.name()}">SUBMITTED</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="from">From date</label>
+        <input class="form-control" type="date" id="from" name="from" th:value="${filter.from}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="to">To date</label>
+        <input class="form-control" type="date" id="to" name="to" th:value="${filter.to}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label for="sort">Sort by</label>
+        <select class="form-select" id="sort" name="sort">
+          <option value="newest" th:selected="${filter.sortOrDefault() == 'newest'}">Newest first</option>
+          <option value="oldest" th:selected="${filter.sortOrDefault() == 'oldest'}">Oldest first</option>
+          <option value="amount" th:selected="${filter.sortOrDefault() == 'amount'}">Highest value</option>
+          <option value="customer" th:selected="${filter.sortOrDefault() == 'customer'}">Name (A to Z)</option>
+        </select>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-2">
+      <button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+      <a class="btn btn-outline-secondary btn-sm" th:href="@{/sales/orders}">Clear</a>
+      <span class="ms-auto align-self-center small text-muted">
+        <span th:text="${#lists.size(orders)}">0</span> order(s) shown
+      </span>
+    </div>
+  </form>
+
+  <div class="oa-table-card">
+    <div class="oa-card-head">
+      <span><i class="bi bi-receipt me-1"></i>Orders</span>
+    </div>
+    <div th:if="${#lists.isEmpty(orders)}">
+      <div th:replace="~{fragments :: empty('bi-inbox', 'No orders to show', 'Place a new order, or clear the filter above.')}"></div>
+    </div>
+    <div class="table-responsive" th:unless="${#lists.isEmpty(orders)}">
+      <table class="table table-hover align-middle" id="orders-table">
+        <thead>
+          <tr>
+            <th>Order</th><th>Retailer</th><th>Products</th><th class="text-end">Quantity</th>
+            <th class="text-end">Amount</th><th class="text-end">GST</th><th class="text-end">Total</th>
+            <th>Date</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="o : ${orders}">
+            <td class="oa-id" th:text="'#' + ${o.id}">#1</td>
+            <td>
+              <div th:text="${o.customerName}">Retailer A</div>
+              <div class="oa-sub-cell" th:if="${o.invoiceNumber}" th:text="${o.invoiceNumber}">INV/2026-27/0001</div>
+            </td>
+            <td th:text="${o.products}">Murukku 200 g</td>
+            <td class="text-end" th:text="${@fmt.number(o.packets)} + ' packets'">150 packets</td>
+            <td class="text-end money" th:text="${@fmt.rupees(o.totalPaise)}">Rs 7,500.00</td>
+            <td class="text-end money">
+              <span th:text="${@fmt.rupees(o.gstPaise)}">Rs 375.00</span>
+              <span class="oa-sub-cell" th:if="${o.gstEstimated()}" title="GST becomes final when the invoice is raised">est.</span>
+            </td>
+            <td class="text-end money fw-semibold" th:text="${@fmt.rupees(o.totalWithGstPaise)}">Rs 7,875.00</td>
+            <td class="oa-sub-cell" th:text="${@fmt.dateTime(o.createdAt)}">21 Nov 2026, 16:40</td>
+            <td><span th:replace="~{fragments :: statusBadge(${o.status})}"></span></td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary" th:href="@{/sales/orders/{id}(id=${o.id})}">
+                <i class="bi bi-eye me-1"></i>View</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 <th:block th:replace="~{fragments :: scripts}"></th:block>

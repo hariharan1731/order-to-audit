@@ -1,19 +1,50 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div th:fragment="orderTable(list)">
-  <p class="text-muted" th:if="${#lists.isEmpty(list)}">Nothing waiting here.</p>
-  <div class="table-responsive card p-2" th:unless="${#lists.isEmpty(list)}">
-    <table class="table table-hover mb-0 align-middle">
-      <thead><tr><th>Order</th><th>Customer</th><th>Salesman</th><th class="text-end">Packets</th><th class="text-end">Before GST</th><th></th></tr></thead>
+<!--
+  One order queue or result list. Used by the order desk for "to approve", "to invoice", "to dispatch"
+  and for search results, so all four look identical.
+-->
+<div th:fragment="orderTable(list, title, icon, hint)" class="oa-table-card mb-3">
+  <div class="oa-card-head">
+    <span><i class="bi me-1" th:classappend="${icon}"></i><span th:text="${title}">Orders</span>
+      <span class="oa-chip is-gold ms-1" th:text="${#lists.size(list)}">0</span></span>
+    <span class="small text-muted d-none d-md-inline" th:text="${hint}">hint</span>
+  </div>
+  <div th:if="${#lists.isEmpty(list)}">
+    <div th:replace="~{fragments :: empty('bi-check2-all', 'Nothing waiting here', 'This queue is clear.')}"></div>
+  </div>
+  <div class="table-responsive" th:unless="${#lists.isEmpty(list)}">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Order</th><th>Customer</th><th>Salesman</th><th>Products</th>
+          <th class="text-end">Quantity</th><th class="text-end">Amount</th><th class="text-end">GST</th>
+          <th class="text-end">Total</th><th>Date</th><th>Status</th><th></th>
+        </tr>
+      </thead>
       <tbody>
         <tr th:each="o : ${list}">
-          <td th:text="'#' + ${o.id}">#1</td>
-          <td th:text="${o.customerName}">Retailer A</td>
+          <td class="oa-id" th:text="'#' + ${o.id}">#1</td>
+          <td>
+            <div th:text="${o.customerName}">Retailer A</div>
+            <div class="oa-sub-cell" th:if="${o.invoiceNumber}" th:text="${o.invoiceNumber}">INV/2026-27/0001</div>
+          </td>
           <td th:text="${o.salesman}">ravi</td>
-          <td class="text-end" th:text="${@fmt.number(o.packets)}">150</td>
+          <td th:text="${o.products}">Murukku 200 g</td>
+          <td class="text-end" th:text="${@fmt.number(o.packets)} + ' packets'">150 packets</td>
           <td class="text-end money" th:text="${@fmt.rupees(o.totalPaise)}">Rs 7,500.00</td>
-          <td class="text-end"><a class="btn btn-sm btn-primary" th:href="@{/admin/orders/{id}(id=${o.id})}">Open</a></td>
+          <td class="text-end money">
+            <span th:text="${@fmt.rupees(o.gstPaise)}">Rs 375.00</span>
+            <span class="oa-sub-cell" th:if="${o.gstEstimated()}" title="GST becomes final when the invoice is raised">est.</span>
+          </td>
+          <td class="text-end money fw-semibold" th:text="${@fmt.rupees(o.totalWithGstPaise)}">Rs 7,875.00</td>
+          <td class="oa-sub-cell" th:text="${@fmt.dateTime(o.createdAt)}">21 Nov 2026, 16:40</td>
+          <td><span th:replace="~{fragments :: statusBadge(${o.status})}"></span></td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-primary" th:href="@{/admin/orders/{id}(id=${o.id})}">
+              <i class="bi bi-arrow-right-short"></i>Open</a>
+          </td>
         </tr>
       </tbody>
     </table>

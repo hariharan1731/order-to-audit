@@ -25,8 +25,11 @@ public class RecipeService {
     private final RecipeRepository recipes;
     private final RecipeLineRepository lines;
     private final ItemRepository items;
+    private final AuditService audit;
 
-    public RecipeService(RecipeRepository recipes, RecipeLineRepository lines, ItemRepository items) {
+    public RecipeService(RecipeRepository recipes, RecipeLineRepository lines, ItemRepository items,
+                         AuditService audit) {
+        this.audit = audit;
         this.recipes = recipes;
         this.lines = lines;
         this.items = items;
@@ -70,6 +73,8 @@ public class RecipeService {
         for (RecipeLineSpec spec : specs) {
             lines.save(new RecipeLine(saved.getId(), spec.itemId(), spec.quantityBase()));
         }
+        audit.record(com.orderaudit.security.CurrentUser.name(), "RECIPE_CREATED", "RECIPE", saved.getId(),
+                cleanName + " (" + specs.size() + " materials, bulk " + bulkYieldGrams + " g)");
         return saved;
     }
 }

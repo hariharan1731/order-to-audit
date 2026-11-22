@@ -12,4 +12,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     boolean existsByUsernameIgnoreCase(String username);
 
     List<AppUser> findAllByOrderByUsernameAsc();
+
+    /** How many owner accounts can still log in (the last one must never be disabled). */
+    long countByRoleAndEnabledTrue(com.orderaudit.domain.Role role);
 }

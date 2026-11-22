@@ -1,39 +1,92 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Home')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
-  <div class="welcome mb-4">
-    <h1 class="h3 mb-1">Welcome, <span th:text="${nav.username}">user</span></h1>
-    <div class="role">Order to Audit: from purchase to payment, every step recorded.</div>
+<div class="container-xxl">
+
+  <!-- Welcome banner: who is signed in, what they can do here, and today's date. -->
+  <section class="welcome mb-4" aria-label="Welcome"
+           th:with="roleName=${nav.owner} ? 'Owner' : (${nav.admin} ? 'Office administrator' : (${nav.production} ? 'Production supervisor' : (${nav.reports} ? 'Accountant' : 'Sales')))">
+    <div>
+      <span class="oa-eyebrow" th:text="${roleName} + ' workspace'">Owner workspace</span>
+      <h1>Welcome back, <span th:text="${nav.username}">user</span></h1>
+      <div class="role">Order to Audit: from purchase to payment, every step recorded.</div>
+    </div>
+    <div class="oa-date"><i class="bi bi-calendar3" aria-hidden="true"></i>
+      <span th:text="${#temporals.format(#temporals.createNow(), 'EEEE, d MMMM yyyy')}">Saturday, 21 November 2026</span></div>
+  </section>
+
+  <h2 class="oa-section-title" th:if="${myOrders != null or summary != null}">
+    <i class="bi bi-activity" aria-hidden="true"></i> Today at a glance</h2>
+
+  <!-- The salesman's own numbers. -->
+  <div class="oa-stats" th:if="${myOrders != null}" id="sales-summary">
+    <div class="oa-stat is-total">
+      <span class="oa-stat-label"><i class="bi bi-receipt"></i> My orders</span>
+      <span class="oa-stat-value" th:text="${myOrders}">0</span>
+    </div>
+    <div class="oa-stat is-submitted">
+      <span class="oa-stat-label"><i class="bi bi-hourglass-split"></i> Waiting approval</span>
+      <span class="oa-stat-value" th:text="${myWaiting}">0</span>
+    </div>
+    <div class="oa-stat is-done">
+      <span class="oa-stat-label"><i class="bi bi-truck"></i> Dispatched</span>
+      <span class="oa-stat-value" th:text="${myDispatched}">0</span>
+    </div>
   </div>
-  <div class="row g-3">
-    <div class="col-6 col-md-4" th:if="${nav.sales}"><a class="tile" th:href="@{/sales/orders/new}">
-      <div class="card h-100"><div class="card-body"><div class="icon">&#128722;</div>
-        <h2 class="h5 mt-2">New order</h2><p class="text-muted mb-0">Place an order for a customer.</p></div></div></a></div>
-    <div class="col-6 col-md-4" th:if="${nav.sales}"><a class="tile" th:href="@{/sales/orders}">
-      <div class="card h-100"><div class="card-body"><div class="icon">&#128203;</div>
-        <h2 class="h5 mt-2">My orders</h2><p class="text-muted mb-0">Follow your orders.</p></div></div></a></div>
-    <div class="col-6 col-md-4" th:if="${nav.admin}"><a class="tile" th:href="@{/admin/orders}">
-      <div class="card h-100"><div class="card-body"><div class="icon">&#9989;</div>
-        <h2 class="h5 mt-2">Order desk</h2><p class="text-muted mb-0">Approve, invoice and dispatch.</p></div></div></a></div>
-    <div class="col-6 col-md-4" th:if="${nav.admin}"><a class="tile" th:href="@{/admin/payments}">
-      <div class="card h-100"><div class="card-body"><div class="icon">&#128176;</div>
-        <h2 class="h5 mt-2">Payments</h2><p class="text-muted mb-0">Who owes what; record money in.</p></div></div></a></div>
-    <div class="col-6 col-md-4" th:if="${nav.production}"><a class="tile" th:href="@{/production}">
-      <div class="card h-100"><div class="card-body"><div class="icon">&#127981;</div>
-        <h2 class="h5 mt-2">Production</h2><p class="text-muted mb-0">Plan and record production runs.</p></div></div></a></div>
-    <div class="col-6 col-md-4" th:if="${nav.stock}"><a class="tile" th:href="@{/stock}">
-      <div class="card h-100"><div class="card-body"><div class="icon">&#128230;</div>
-        <h2 class="h5 mt-2">Stock</h2><p class="text-muted mb-0">What is in the store right now.</p></div></div></a></div>
-    <div class="col-6 col-md-4" th:if="${nav.reports}"><a class="tile" th:href="@{/reports}">
-      <div class="card h-100"><div class="card-body"><div class="icon">&#128202;</div>
-        <h2 class="h5 mt-2">Reports</h2><p class="text-muted mb-0">Registers, GST, costing, ageing. Export to CSV, Excel, PDF.</p></div></div></a></div>
-    <div class="col-6 col-md-4" th:if="${nav.owner}"><a class="tile" th:href="@{/owner}">
-      <div class="card h-100"><div class="card-body"><div class="icon">&#128200;</div>
-        <h2 class="h5 mt-2">Owner dashboard</h2><p class="text-muted mb-0">Sales, dues, stock and alerts at a glance.</p></div></div></a></div>
+
+  <!-- The office numbers, each card only for the roles that are allowed to see it. -->
+  <div class="oa-stats" th:if="${summary != null}" id="office-summary">
+    <div class="oa-stat is-submitted" th:if="${nav.admin or nav.owner}">
+      <span class="oa-stat-label"><i class="bi bi-hourglass-split"></i> Orders waiting approval</span>
+      <span class="oa-stat-value" th:text="${summary.ordersWaiting}">0</span>
+    </div>
+    <div class="oa-stat is-money" th:if="${nav.reports}">
+      <span class="oa-stat-label"><i class="bi bi-graph-up-arrow"></i> Sales this month</span>
+      <span class="oa-stat-value money" th:text="${@fmt.rupees(summary.salesInclGstPaise)}">Rs 0.00</span>
+    </div>
+    <div class="oa-stat is-bad" th:if="${nav.reports}">
+      <span class="oa-stat-label"><i class="bi bi-cash-stack"></i> Outstanding</span>
+      <span class="oa-stat-value money" th:text="${@fmt.rupees(summary.outstandingPaise)}">Rs 0.00</span>
+    </div>
+    <div class="oa-stat is-done" th:if="${nav.production or nav.stock}">
+      <span class="oa-stat-label"><i class="bi bi-boxes"></i> Finished packets in stock</span>
+      <span class="oa-stat-value" th:text="${@fmt.number(summary.finishedPackets)}">0</span>
+    </div>
+    <div class="oa-stat is-pending" th:if="${nav.production}">
+      <span class="oa-stat-label"><i class="bi bi-exclamation-triangle"></i> Flagged runs this month</span>
+      <span class="oa-stat-value" th:text="${summary.flaggedRuns}">0</span>
+    </div>
+  </div>
+
+  <h2 class="oa-section-title mt-2"><i class="bi bi-lightning-charge" aria-hidden="true"></i> Quick actions</h2>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-3" th:if="${nav.sales}"><a class="tile" th:href="@{/sales/orders/new}">
+      <div class="card"><div class="card-body"><div class="icon"><i class="bi bi-cart-plus"></i></div>
+        <h2 class="h6 mt-2">New order</h2><p class="text-muted small mb-0">Place an order for a customer.</p></div></div></a></div>
+    <div class="col-6 col-md-4 col-xl-3" th:if="${nav.sales}"><a class="tile" th:href="@{/sales/orders}">
+      <div class="card"><div class="card-body"><div class="icon"><i class="bi bi-receipt"></i></div>
+        <h2 class="h6 mt-2">My orders</h2><p class="text-muted small mb-0">Follow your orders.</p></div></div></a></div>
+    <div class="col-6 col-md-4 col-xl-3" th:if="${nav.admin}"><a class="tile" th:href="@{/admin/orders}">
+      <div class="card"><div class="card-body"><div class="icon"><i class="bi bi-ui-checks"></i></div>
+        <h2 class="h6 mt-2">Order desk</h2><p class="text-muted small mb-0">Approve, invoice and dispatch.</p></div></div></a></div>
+    <div class="col-6 col-md-4 col-xl-3" th:if="${nav.admin}"><a class="tile" th:href="@{/admin/payments}">
+      <div class="card"><div class="card-body"><div class="icon"><i class="bi bi-cash-coin"></i></div>
+        <h2 class="h6 mt-2">Payments</h2><p class="text-muted small mb-0">Who owes what; record money in.</p></div></div></a></div>
+    <div class="col-6 col-md-4 col-xl-3" th:if="${nav.production}"><a class="tile" th:href="@{/production}">
+      <div class="card"><div class="card-body"><div class="icon"><i class="bi bi-gear-wide-connected"></i></div>
+        <h2 class="h6 mt-2">Production</h2><p class="text-muted small mb-0">Plan and record production runs.</p></div></div></a></div>
+    <div class="col-6 col-md-4 col-xl-3" th:if="${nav.stock}"><a class="tile" th:href="@{/stock}">
+      <div class="card"><div class="card-body"><div class="icon"><i class="bi bi-boxes"></i></div>
+        <h2 class="h6 mt-2">Stock</h2><p class="text-muted small mb-0">What is in the store right now.</p></div></div></a></div>
+    <div class="col-6 col-md-4 col-xl-3" th:if="${nav.reports}"><a class="tile" th:href="@{/reports}">
+      <div class="card"><div class="card-body"><div class="icon"><i class="bi bi-bar-chart-line"></i></div>
+        <h2 class="h6 mt-2">Reports</h2><p class="text-muted small mb-0">Registers, GST, costing, ageing. Export to CSV, Excel, PDF.</p></div></div></a></div>
+    <div class="col-6 col-md-4 col-xl-3" th:if="${nav.owner}"><a class="tile" th:href="@{/owner}">
+      <div class="card"><div class="card-body"><div class="icon"><i class="bi bi-speedometer2"></i></div>
+        <h2 class="h6 mt-2">Owner dashboard</h2><p class="text-muted small mb-0">Sales, dues, stock and alerts at a glance.</p></div></div></a></div>
   </div>
 </div>
 <th:block th:replace="~{fragments :: scripts}"></th:block>

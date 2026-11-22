@@ -33,6 +33,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class PackConfigServiceTest {
 
+    // The service records an audit row on every create; without this mock @InjectMocks passes null.
+    @Mock AuditService audit;
     @Mock PackConfigRepository configs;
     @Mock PackLineRepository lines;
     @Mock RecipeRepository recipes;

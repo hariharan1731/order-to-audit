@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RecipeLineRepository extends JpaRepository<RecipeLine, Long> {
     List<RecipeLine> findByRecipeId(Long recipeId);
+
+    boolean existsByItemId(Long itemId);
 }

@@ -1,21 +1,32 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Items')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
+<div class="container-xxl">
   <h1 class="h4 mb-3">Items</h1>
-  <div class="table-responsive card p-2 mb-4">
+  <div class="oa-table-card table-responsive mb-4">
     <table class="table table-hover mb-0 align-middle" id="item-table">
-      <thead><tr><th>Name</th><th>Type</th><th>Base unit</th><th>HSN</th><th class="text-end">GST %</th><th>Status</th></tr></thead>
+      <thead><tr><th>Name</th><th>Type</th><th>Base unit</th><th>HSN</th><th class="text-end">GST %</th><th>Status</th><th>Change</th></tr></thead>
       <tbody><tr th:each="i : ${items}">
         <td th:text="${i.name}">Flour</td>
-        <td><span class="badge bg-light text-dark" th:text="${i.itemType}">RAW</span></td>
+        <td><span class="oa-chip" th:text="${i.itemType}">RAW</span></td>
         <td th:text="${i.baseUnit}">GRAM</td>
         <td th:text="${i.hsnCode != null} ? ${i.hsnCode} : '-'">-</td>
         <td class="text-end" th:text="${i.gstRatePercent.stripTrailingZeros().toPlainString()}">5</td>
-        <td><span class="badge" th:classappend="${i.active} ? 'bg-success' : 'bg-secondary'" th:text="${i.active} ? 'Active' : 'Inactive'">Active</span></td>
+        <td><span class="badge oa-badge" th:classappend="${i.active} ? 'status-ACTIVE' : 'status-INACTIVE'"><i class="bi" aria-hidden="true" th:classappend="${i.active} ? 'bi-check-circle' : 'bi-pause-circle'"></i><span th:text="${i.active} ? 'Active' : 'Inactive'">Active</span></span></td>
+        <td>
+          <form th:action="@{/admin/items/{id}(id=${i.id})}" method="post" class="d-flex gap-1 mb-1">
+            <input class="form-control form-control-sm" style="width:90px" name="hsnCode" placeholder="HSN" th:value="${i.hsnCode}">
+            <input class="form-control form-control-sm" style="width:70px" name="gstRate" th:value="${i.gstRatePercent.stripTrailingZeros().toPlainString()}" required>
+            <button class="btn btn-sm btn-outline-primary" type="submit">Save</button>
+          </form>
+          <form th:action="@{/admin/items/{id}/active(id=${i.id})}" method="post">
+            <input type="hidden" name="active" th:value="${!i.active}">
+            <button class="btn btn-sm btn-outline-secondary" type="submit" th:text="${i.active} ? 'Switch off' : 'Switch on'">Switch off</button>
+          </form>
+        </td>
       </tr></tbody>
     </table>
   </div>

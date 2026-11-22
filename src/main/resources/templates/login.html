@@ -1,13 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Log in')}"></head>
-<body>
-<div class="container" style="max-width: 420px; margin-top: 12vh;">
+<body class="oa-login">
+<div class="oa-login-box">
   <div class="card p-4">
-    <h1 class="h4 mb-1">Order to Audit</h1>
-    <p class="text-muted">Murukku manufacturing and sales</p>
-    <div class="alert alert-danger" th:if="${param.error}">Wrong username or password.</div>
-    <div class="alert alert-info" th:if="${param.logout}">You have been logged out.</div>
+    <div class="oa-brand oa-brand-dark mb-3">
+      <span class="oa-logo"><i class="bi bi-boxes"></i></span>
+      <span>
+        <span class="oa-name">Order to Audit</span>
+        <span class="oa-tagline">Factory &amp; order management</span>
+      </span>
+    </div>
+    <div class="alert alert-danger" th:if="${param.error}">
+      <i class="bi bi-exclamation-triangle-fill"></i><span>Wrong username or password.</span></div>
+    <div class="alert alert-success" th:if="${param.logout}">
+      <i class="bi bi-check-circle-fill"></i><span>You have been logged out.</span></div>
     <form th:action="@{/login}" method="post">
       <div class="mb-3">
         <label for="username" class="form-label">Username</label>
@@ -18,9 +25,11 @@
         <input id="password" name="password" type="password" class="form-control form-control-lg"
                autocomplete="current-password" required>
       </div>
-      <button class="btn btn-primary btn-lg w-100" type="submit">Log in</button>
+      <button class="btn btn-primary btn-lg w-100" type="submit">
+        <i class="bi bi-box-arrow-in-right me-1"></i>Log in</button>
     </form>
   </div>
+  <p class="text-center small text-muted mt-3 mb-0">Murukku manufacturing and sales</p>
 </div>
 </body>
 </html>

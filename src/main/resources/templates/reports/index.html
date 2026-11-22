@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Reports')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container" style="max-width: 760px;">
+<div class="container-xxl" style="max-width: 760px;">
   <h1 class="h4 mb-3">Reports</h1>
   <form th:action="@{/reports/run}" method="get" class="card p-3">
     <div class="mb-3">

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Customers')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
+<div class="container-xxl">
   <h1 class="h4 mb-3">Customers</h1>
-  <div class="table-responsive card p-2 mb-4">
+  <div class="oa-table-card table-responsive mb-4">
     <table class="table mb-0">
       <thead><tr><th>Name</th><th>GSTIN</th><th>State</th><th>Address</th></tr></thead>
       <tbody><tr th:each="c : ${customers}">

@@ -1,23 +1,53 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Stock')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">Stock now</h1>
-    <a class="btn btn-outline-primary" id="record-purchase" th:href="@{/stock/purchases/new}">Record purchase</a>
+<div class="container-xxl">
+  <div class="oa-page-head">
+    <div>
+      <h1>Stock now</h1>
+      <div class="oa-sub">Live balance of every item, worked out from the stock ledger. Open History for every movement.</div>
+    </div>
+    <a class="btn btn-outline-primary" id="record-purchase" th:href="@{/stock/purchases/new}"><i class="bi bi-truck me-1" aria-hidden="true"></i>Record purchase</a>
   </div>
-  <div class="table-responsive card p-2">
+
+  <!-- Summary of the same rows shown in the table below (no extra data). -->
+  <div class="oa-stats" id="stock-summary"
+       th:with="raw=${rows.?[type.name() == 'RAW']}, pack=${rows.?[type.name() == 'PACKAGING']}, fin=${rows.?[type.name() == 'FINISHED']}, empty=${rows.?[onHand <= 0]}">
+    <div class="oa-stat is-total">
+      <span class="oa-stat-label"><i class="bi bi-box-seam"></i> Items tracked</span>
+      <span class="oa-stat-value" th:text="${#lists.size(rows)}">0</span>
+    </div>
+    <div class="oa-stat is-approved">
+      <span class="oa-stat-label"><i class="bi bi-basket"></i> Raw materials</span>
+      <span class="oa-stat-value" th:text="${#lists.size(raw)}">0</span>
+    </div>
+    <div class="oa-stat is-submitted">
+      <span class="oa-stat-label"><i class="bi bi-archive"></i> Packaging</span>
+      <span class="oa-stat-value" th:text="${#lists.size(pack)}">0</span>
+    </div>
+    <div class="oa-stat is-done">
+      <span class="oa-stat-label"><i class="bi bi-boxes"></i> Finished packets</span>
+      <span class="oa-stat-value" th:text="${#lists.isEmpty(fin)} ? '0' : ${#numbers.formatInteger(#aggregates.sum(fin.![onHand]), 1, 'COMMA')}">0</span>
+    </div>
+    <div class="oa-stat" th:classappend="${#lists.isEmpty(empty)} ? 'is-approved' : 'is-bad'">
+      <span class="oa-stat-label"><i class="bi bi-exclamation-octagon"></i> Out of stock</span>
+      <span class="oa-stat-value" th:text="${#lists.size(empty)}">0</span>
+      <span class="oa-stat-foot" th:text="${#lists.isEmpty(empty)} ? 'Every item has stock' : 'Items with nothing on hand'">-</span>
+    </div>
+  </div>
+  <div class="oa-table-card table-responsive">
     <table class="table table-hover mb-0 align-middle">
       <thead><tr><th>Item</th><th>Type</th><th class="text-end">On hand</th><th></th></tr></thead>
       <tbody>
         <tr th:each="r : ${rows}">
           <td th:text="${r.name}">Flour</td>
-          <td><span class="badge bg-light text-dark" th:text="${r.type}">RAW</span></td>
-          <td class="text-end money" th:text="${r.readable}">120 kg</td>
-          <td class="text-end"><a class="btn btn-sm btn-outline-secondary" th:href="@{/stock/items/{id}(id=${r.itemId})}">History</a></td>
+          <td><span class="oa-chip" th:text="${r.type}">RAW</span></td>
+          <td class="text-end money"><span th:text="${r.readable}">120 kg</span>
+            <span class="badge oa-badge status-OVERDUE ms-1" th:if="${r.onHand <= 0}"><i class="bi bi-exclamation-octagon" aria-hidden="true"></i>Out of stock</span></td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-secondary" th:href="@{/stock/items/{id}(id=${r.itemId})}"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>History</a></td>
         </tr>
       </tbody>
     </table>

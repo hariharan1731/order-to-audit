@@ -51,6 +51,16 @@ public class Item {
         this.gstRatePercent = gstRatePercent;
     }
 
+    /** Name, type and base unit never change (stock history depends on them); tax details may. */
+    public void changeTaxDetails(String hsnCode, BigDecimal gstRatePercent) {
+        this.hsnCode = hsnCode;
+        this.gstRatePercent = gstRatePercent;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public ItemType getItemType() { return itemType; }

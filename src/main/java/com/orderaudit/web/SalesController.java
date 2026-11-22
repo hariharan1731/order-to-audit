@@ -1,15 +1,20 @@
 package com.orderaudit.web;
 
 import com.orderaudit.domain.ItemType;
+import com.orderaudit.domain.OrderStatus;
 import com.orderaudit.domain.OrderLineRequest;
 import com.orderaudit.domain.SalesOrder;
+import com.orderaudit.domain.Item;
 import com.orderaudit.service.CustomerService;
+import com.orderaudit.service.PriceService;
 import com.orderaudit.service.ItemService;
 import com.orderaudit.service.OrderQueryService;
 import com.orderaudit.service.OrderService;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -27,29 +32,51 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/sales")
 public class SalesController {
 
+    /** One product on the order form, with its list price so the salesman can see what he is quoting. */
+    public record ProductChoice(long id, String name, Long listPricePaise) {
+    }
+
     private final OrderService orderService;
     private final OrderQueryService queries;
     private final CustomerService customers;
     private final ItemService items;
+    private final PriceService prices;
 
     public SalesController(OrderService orderService, OrderQueryService queries, CustomerService customers,
-                           ItemService items) {
+                           ItemService items, PriceService prices) {
         this.orderService = orderService;
         this.queries = queries;
         this.customers = customers;
         this.items = items;
+        this.prices = prices;
     }
 
     @GetMapping("/orders")
-    public String myOrders(Authentication auth, Model model) {
-        model.addAttribute("orders", queries.mine(auth.getName()));
+    public String myOrders(Authentication auth,
+                           @RequestParam(required = false) String q,
+                           @RequestParam(required = false) String status,
+                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                           @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                           @RequestParam(required = false) String sort,
+                           Model model) {
+        OrderFilter filter = new OrderFilter(q, status, from, to, sort);
+        String me = auth.getName();
+        model.addAttribute("orders", queries.search(me, q, filter.statusValue(), from, to, filter.sortOrDefault()));
+        model.addAttribute("stats", queries.stats(me));
+        model.addAttribute("filter", filter);
+        model.addAttribute("statuses", OrderStatus.values());
         return "sales/orders";
     }
 
     @GetMapping("/orders/new")
     public String newOrderForm(Model model) {
         model.addAttribute("customers", customers.activeList());
-        model.addAttribute("products", items.activeItemsOfType(ItemType.FINISHED));
+        List<ProductChoice> products = new ArrayList<>();
+        for (Item product : items.activeItemsOfType(ItemType.FINISHED)) {
+            products.add(new ProductChoice(product.getId(), product.getName(),
+                    prices.listPriceOf(product.getId()).orElse(null)));
+        }
+        model.addAttribute("products", products);
         model.addAttribute("requestId", UUID.randomUUID().toString());   // same id on a re-send = no duplicate order
         return "sales/new";
     }

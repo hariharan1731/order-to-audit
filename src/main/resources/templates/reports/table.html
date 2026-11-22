@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div th:fragment="htmlTable(t)" class="table-responsive card p-2">
+<div th:fragment="htmlTable(t)" class="oa-table-card table-responsive">
   <table class="table table-sm table-hover mb-0 align-middle">
     <thead><tr><th th:each="h, s : ${t.headers}" th:text="${h}" th:classappend="${t.numeric[s.index]} ? 'text-end'">Header</th></tr></thead>
     <tbody>
@@ -11,7 +11,7 @@
       <tr th:if="${#lists.isEmpty(t.rows)}"><td th:colspan="${#lists.size(t.headers)}" class="text-muted text-center">No data for this period.</td></tr>
     </tbody>
     <tfoot th:if="${t.totals != null}">
-      <tr class="fw-bold table-light"><td th:each="cell, s : ${t.totals}" th:text="${cell}" th:classappend="${t.numeric[s.index]} ? 'text-end money'">total</td></tr>
+      <tr class="fw-bold oa-total-row"><td th:each="cell, s : ${t.totals}" th:text="${cell}" th:classappend="${t.numeric[s.index]} ? 'text-end money'">total</td></tr>
     </tfoot>
   </table>
 </div>

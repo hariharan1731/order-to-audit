@@ -60,7 +60,7 @@ public class InvoiceService {
         if (createdBy == null || createdBy.isBlank()) {
             throw new IllegalArgumentException("createdBy is required");
         }
-        SalesOrder order = orders.findById(orderId).orElseThrow(
+        SalesOrder order = orders.findForUpdate(orderId).orElseThrow(   // locked: one invoice per order
                 () -> new IllegalArgumentException("Order " + orderId + " does not exist"));
         order.markInvoiced();   // throws unless the order is APPROVED, so it can never be invoiced twice
 

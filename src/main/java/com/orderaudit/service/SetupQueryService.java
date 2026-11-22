@@ -26,7 +26,7 @@ public class SetupQueryService {
     public record PackView(String product, int packSizeGrams, int packetsPerCarton, List<String> packaging) {
     }
 
-    public record RecipeView(String name, String batchYield, String tolerance, List<Ingredient> ingredients,
+    public record RecipeView(long id, String name, String batchYield, String tolerance, List<Ingredient> ingredients,
                              List<PackView> packs) {
     }
 
@@ -68,7 +68,7 @@ public class SetupQueryService {
                 packs.add(new PackView(items.findById(c.getFinishedItemId()).orElseThrow().getName(),
                         c.getPackSizeGrams(), c.getPacketsPerCarton(), packaging));
             }
-            views.add(new RecipeView(r.getName(), QuantityFormat.display(r.getBulkYieldGrams(),
+            views.add(new RecipeView(r.getId(), r.getName(), QuantityFormat.display(r.getBulkYieldGrams(),
                     com.orderaudit.domain.Unit.GRAM),
                     r.getTolerancePct() == null ? "default (3%)" : r.getTolerancePct().stripTrailingZeros().toPlainString() + "%",
                     ingredients, packs));

@@ -30,6 +30,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class RecipeServiceTest {
 
+    // The service records an audit row on every create; without this mock @InjectMocks passes null.
+    @Mock AuditService audit;
     @Mock RecipeRepository recipes;
     @Mock RecipeLineRepository lines;
     @Mock ItemRepository items;

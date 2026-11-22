@@ -130,7 +130,7 @@ public class OrderService {
     /** Admin edit before approval: change one line's quantity and price. */
     @Transactional
     public void changeLine(long orderId, long itemId, long newQuantity, long newUnitPricePaise) {
-        SalesOrder order = loadOrder(orderId);
+        SalesOrder order = lockOrder(orderId);
         order.requireEditable();
         if (newQuantity <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than zero (reject the order instead)");
@@ -150,7 +150,7 @@ public class OrderService {
     @Transactional
     public SalesOrder approve(long orderId, String approvedBy) {
         requireUser(approvedBy);
-        SalesOrder order = loadOrder(orderId);
+        SalesOrder order = lockOrder(orderId);
         if (order.getStatus() != OrderStatus.SUBMITTED) {
             throw new IllegalStateException("Cannot approve an order that is " + order.getStatus());
         }
@@ -173,7 +173,7 @@ public class OrderService {
         if (reason == null || reason.isBlank() || reason.length() > 300) {
             throw new IllegalArgumentException("A reason is required (at most 300 characters)");
         }
-        SalesOrder order = loadOrder(orderId);
+        SalesOrder order = lockOrder(orderId);
         order.reject(rejectedBy.trim(), reason.trim());
         audit.record(rejectedBy, "ORDER_REJECTED", "ORDER", orderId, reason.trim());
         return order;
@@ -192,6 +192,12 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<OrderLine> linesOf(long orderId) {
         return lines.findByOrderIdOrderByItemIdAsc(orderId);
+    }
+
+    /** Read the order AND lock its row, for anything that changes it (see SalesOrderRepository.findForUpdate). */
+    private SalesOrder lockOrder(long orderId) {
+        return orders.findForUpdate(orderId).orElseThrow(
+                () -> new IllegalArgumentException("Order " + orderId + " does not exist"));
     }
 
     private SalesOrder loadOrder(long orderId) {

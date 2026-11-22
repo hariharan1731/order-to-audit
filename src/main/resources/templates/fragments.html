@@ -1,55 +1,136 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:fragment="head(title)">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title th:text="${title} + ' - Order to Audit'">Order to Audit</title>
+  <meta name="theme-color" content="#162420">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<nav th:fragment="nav" class="navbar navbar-expand-lg navbar-dark bg-dark mb-3">
-  <div class="container-fluid">
-    <a class="navbar-brand" th:href="@{/}">Order to Audit</a>
+
+<!-- Top bar. Every link is role-checked, and the page you are on is highlighted. -->
+<nav th:fragment="nav" class="navbar navbar-expand-lg navbar-dark oa-nav mb-4" aria-label="Main">
+  <div class="container-xxl">
+    <a class="navbar-brand oa-brand p-0 me-3" th:href="@{/}">
+      <span class="oa-logo" aria-hidden="true"><i class="bi bi-boxes"></i></span>
+      <span>
+        <span class="oa-name">Order to Audit</span>
+        <span class="oa-tagline">Factory &amp; order management</span>
+      </span>
+    </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
             aria-controls="menu" aria-expanded="false" aria-label="Menu">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="menu">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item" th:if="${nav.sales}"><a class="nav-link" th:href="@{/sales/orders}">My orders</a></li>
-        <li class="nav-item" th:if="${nav.admin}"><a class="nav-link" th:href="@{/admin/orders}">Order desk</a></li>
+      <ul class="navbar-nav me-auto gap-lg-1">
+        <li class="nav-item" th:if="${nav.sales}">
+          <a class="nav-link" th:classappend="${nav.on('/sales')} ? 'active'"
+             th:attr="aria-current=${nav.on('/sales')} ? 'page' : null" th:href="@{/sales/orders}">
+            <i class="bi bi-receipt"></i> My orders</a></li>
+        <li class="nav-item" th:if="${nav.admin}">
+          <a class="nav-link" th:classappend="${nav.on('/admin/orders')} ? 'active'"
+             th:attr="aria-current=${nav.on('/admin/orders')} ? 'page' : null" th:href="@{/admin/orders}">
+            <i class="bi bi-ui-checks"></i> Order desk</a></li>
         <li class="nav-item dropdown" th:if="${nav.admin}">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Office</a>
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+             th:classappend="${nav.on('/admin/invoices') or nav.on('/admin/payments') or nav.on('/admin/customers')
+                              or nav.on('/admin/prices') or nav.on('/admin/items') or nav.on('/admin/setup')
+                              or nav.on('/users') or nav.on('/audit')} ? 'active'">
+            <i class="bi bi-briefcase"></i> Office</a>
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" th:href="@{/admin/invoices}">Invoices</a></li>
-            <li><a class="dropdown-item" th:href="@{/admin/payments}">Payments</a></li>
-            <li><a class="dropdown-item" th:href="@{/admin/customers}">Customers</a></li>
-            <li><a class="dropdown-item" th:href="@{/admin/prices}">Prices</a></li>
-            <li><a class="dropdown-item" th:href="@{/admin/items}">Items</a></li>
-            <li><a class="dropdown-item" th:href="@{/admin/setup}">Recipes and packs</a></li>
-            <li><a class="dropdown-item" th:href="@{/users}">Users</a></li>
-            <li><a class="dropdown-item" th:href="@{/audit}">Audit log</a></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/admin/invoices')} ? 'active'" th:attr="aria-current=${nav.on('/admin/invoices')} ? 'page' : null" th:href="@{/admin/invoices}"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Invoices</a></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/admin/payments')} ? 'active'" th:attr="aria-current=${nav.on('/admin/payments')} ? 'page' : null" th:href="@{/admin/payments}"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Payments</a></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/admin/customers')} ? 'active'" th:attr="aria-current=${nav.on('/admin/customers')} ? 'page' : null" th:href="@{/admin/customers}"><i class="bi bi-people me-1" aria-hidden="true"></i>Customers</a></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/admin/prices')} ? 'active'" th:attr="aria-current=${nav.on('/admin/prices')} ? 'page' : null" th:href="@{/admin/prices}"><i class="bi bi-tags me-1" aria-hidden="true"></i>Prices</a></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/admin/items')} ? 'active'" th:attr="aria-current=${nav.on('/admin/items')} ? 'page' : null" th:href="@{/admin/items}"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Items</a></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/admin/setup')} ? 'active'" th:attr="aria-current=${nav.on('/admin/setup')} ? 'page' : null" th:href="@{/admin/setup}"><i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>Recipes and packs</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/users')} ? 'active'" th:attr="aria-current=${nav.on('/users')} ? 'page' : null" th:href="@{/users}"><i class="bi bi-person-badge me-1" aria-hidden="true"></i>Users</a></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/audit')} ? 'active'" th:attr="aria-current=${nav.on('/audit')} ? 'page' : null" th:href="@{/audit}"><i class="bi bi-shield-check me-1" aria-hidden="true"></i>Audit log</a></li>
           </ul>
         </li>
-        <li class="nav-item" th:if="${nav.production}"><a class="nav-link" th:href="@{/production}">Production</a></li>
-        <li class="nav-item" th:if="${nav.stock}"><a class="nav-link" th:href="@{/stock}">Stock</a></li>
-        <li class="nav-item" th:if="${nav.reports}"><a class="nav-link" th:href="@{/reports}">Reports</a></li>
-        <li class="nav-item" th:if="${nav.owner}"><a class="nav-link" th:href="@{/owner}">Owner</a></li>
+        <li class="nav-item" th:if="${nav.production}">
+          <a class="nav-link" th:classappend="${nav.on('/production')} ? 'active'"
+             th:attr="aria-current=${nav.on('/production')} ? 'page' : null" th:href="@{/production}">
+            <i class="bi bi-gear-wide-connected"></i> Production</a></li>
+        <li class="nav-item" th:if="${nav.stock}">
+          <a class="nav-link" th:classappend="${nav.on('/stock')} ? 'active'"
+             th:attr="aria-current=${nav.on('/stock')} ? 'page' : null" th:href="@{/stock}">
+            <i class="bi bi-boxes"></i> Stock</a></li>
+        <li class="nav-item" th:if="${nav.reports}">
+          <a class="nav-link" th:classappend="${nav.on('/reports')} ? 'active'"
+             th:attr="aria-current=${nav.on('/reports')} ? 'page' : null" th:href="@{/reports}">
+            <i class="bi bi-bar-chart-line"></i> Reports</a></li>
+        <li class="nav-item" th:if="${nav.owner}">
+          <a class="nav-link" th:classappend="${nav.on('/owner')} ? 'active'"
+             th:attr="aria-current=${nav.on('/owner')} ? 'page' : null" th:href="@{/owner}">
+            <i class="bi bi-speedometer2"></i> Owner</a></li>
       </ul>
-      <form th:if="${nav.username != null}" th:action="@{/logout}" method="post" class="d-flex align-items-center gap-2">
-        <span class="navbar-text text-light" th:text="${nav.username}">user</span>
-        <button class="btn btn-outline-light btn-sm" type="submit">Log out</button>
+      <form th:if="${nav.username != null}" th:action="@{/logout}" method="post" class="oa-user">
+        <span class="oa-avatar" th:text="${#strings.substring(nav.username, 0, 1)}">u</span>
+        <span class="oa-username" th:text="${nav.username}">user</span>
+        <button class="btn btn-outline-light btn-sm" type="submit" aria-label="Sign out" title="Sign out"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></button>
       </form>
     </div>
   </div>
 </nav>
-<div th:fragment="messages" class="container">
-  <div class="alert alert-success" role="alert" th:if="${message}" th:text="${message}">done</div>
-  <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}">problem</div>
+
+<div th:fragment="messages" class="container-xxl">
+  <div class="alert alert-success" role="alert" th:if="${message}">
+    <i class="bi bi-check-circle-fill"></i><span th:text="${message}">done</span>
+  </div>
+  <div class="alert alert-danger" role="alert" th:if="${error}">
+    <i class="bi bi-exclamation-triangle-fill"></i><span th:text="${error}">problem</span>
+  </div>
 </div>
+
+<!-- Page title block: heading plus one line of explanation. Buttons live in the page itself. -->
+<div th:fragment="pageHead(title, subtitle)">
+  <h1 th:text="${title}">Title</h1>
+  <div class="oa-sub" th:if="${subtitle}" th:text="${subtitle}">subtitle</div>
+</div>
+
+<!-- A coloured status pill, so the same status always looks the same everywhere. -->
+<span th:fragment="statusBadge(status)" class="badge oa-badge" th:classappend="'status-' + ${status}">
+  <i class="bi" aria-hidden="true" th:classappend="${@fmt.statusIcon(status)}"></i>
+  <span th:text="${status}">SUBMITTED</span>
+</span>
+
+<!-- "Nothing here yet" block, so an empty table never looks broken. -->
+<div th:fragment="empty(icon, title, text)" class="oa-empty">
+  <i class="bi" th:classappend="${icon}"></i>
+  <div class="oa-empty-title" th:text="${title}">Nothing here</div>
+  <div class="small" th:text="${text}">text</div>
+</div>
+
 <th:block th:fragment="scripts">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Loading state + double-click protection: once a valid form is sent, its buttons are disabled and show a spinner.
+    document.addEventListener('submit', function (e) {
+      var form = e.target;
+      if (form.method && form.method.toLowerCase() !== 'post') { return; }
+      setTimeout(function () {
+        form.querySelectorAll('button[type=submit]').forEach(function (b) {
+          b.disabled = true;
+          if (!b.querySelector('.spinner-border')) {
+            b.insertAdjacentHTML('afterbegin', '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>');
+          }
+        });
+      }, 0);
+    });
+    // Coming back with the browser's Back button must not leave buttons stuck.
+    window.addEventListener('pageshow', function (ev) {
+      if (ev.persisted) { location.reload(); }
+    });
+  </script>
 </th:block>
 </body>
 </html>

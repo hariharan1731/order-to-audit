@@ -1,100 +1,164 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Order')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container" style="max-width: 900px;">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 m-0" th:text="'Order #' + ${order.summary.id}">Order #1</h1>
-    <span class="badge fs-6" th:classappend="'status-' + ${order.summary.status}" th:text="${order.summary.status}">SUBMITTED</span>
+<div class="container-xxl" style="max-width: 1100px;"
+     th:with="st=${order.summary.status.name()},
+              done2=${st == 'APPROVED' or st == 'INVOICED' or st == 'DISPATCHED'},
+              done3=${st == 'INVOICED' or st == 'DISPATCHED'},
+              done4=${st == 'DISPATCHED'}">
+
+  <div class="oa-page-head">
+    <div>
+      <h1 th:text="'Order #' + ${order.summary.id}">Order #1</h1>
+      <div class="oa-sub">
+        <span th:text="${order.summary.customerName}">Retailer A</span> &middot;
+        placed by <span th:text="${order.summary.salesman}">ravi</span> on
+        <span th:text="${@fmt.dateTime(order.summary.createdAt)}">date</span>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span th:replace="~{fragments :: statusBadge(${order.summary.status})}"></span>
+      <a class="btn btn-sm btn-outline-secondary" th:href="@{/admin/orders}">
+        <i class="bi bi-arrow-left me-1"></i>Order desk</a>
+    </div>
   </div>
 
-  <div class="card p-3 mb-3">
-    <strong th:text="${order.summary.customerName}">Retailer A</strong>
-    <div class="text-muted small">
-      Placed by <span th:text="${order.summary.salesman}">ravi</span> on <span th:text="${@fmt.dateTime(order.summary.createdAt)}">date</span>
-      <span th:if="${order.decidedBy}"> &middot; decided by <span th:text="${order.decidedBy}">admin</span></span>
-      <span th:if="${order.dispatchedBy}"> &middot; dispatched by <span th:text="${order.dispatchedBy}">admin</span></span>
-    </div>
-    <div class="small mt-1" th:if="${order.note}">Note: <span th:text="${order.note}">note</span></div>
-    <div class="small mt-1 text-danger" th:if="${order.rejectReason}">Rejected: <span th:text="${order.rejectReason}">reason</span></div>
-    <div class="small mt-2" th:if="${invoice != null}">
-      Invoice <strong th:text="${invoice.invoiceNumber}">INV/2026-27/0001</strong> &middot;
-      <span class="money" th:text="${@fmt.rupees(invoice.totalPaise)}">Rs 7,875.00</span> including GST
-      (<span th:text="${invoice.status}">ISSUED</span>)
-    </div>
+  <!-- Where this order has reached. The same four steps the business actually follows. -->
+  <div class="oa-steps card mb-3" th:unless="${st == 'REJECTED'}">
+    <div class="oa-step is-done"><i class="bi bi-check-circle-fill"></i> Submitted</div>
+    <div class="oa-step" th:classappend="${done2} ? 'is-done'"><i class="bi bi-check-circle-fill"></i> Approved</div>
+    <div class="oa-step" th:classappend="${done3} ? 'is-done'"><i class="bi bi-check-circle-fill"></i> Invoiced</div>
+    <div class="oa-step" th:classappend="${done4} ? 'is-done'"><i class="bi bi-check-circle-fill"></i> Dispatched</div>
   </div>
 
-  <div class="table-responsive card p-2 mb-3">
-    <table class="table mb-0 align-middle">
-      <thead>
-        <tr><th>Product</th><th class="text-end">Packets</th><th class="text-end">Price</th><th class="text-end">Amount</th>
-            <th class="text-end" th:if="${order.summary.status.name() == 'SUBMITTED'}">In stock</th>
-            <th class="text-end" th:if="${order.summary.status.name() == 'SUBMITTED'}">Available</th></tr>
-      </thead>
-      <tbody>
-        <tr th:each="l : ${order.lines}" th:classappend="${l.shortage != null and l.shortage > 0} ? 'table-danger'">
-          <td th:text="${l.itemName}">Murukku 200 g</td>
-          <td class="text-end" th:text="${@fmt.number(l.quantity)}">150</td>
-          <td class="text-end money" th:text="${@fmt.rupees(l.unitPricePaise)}">Rs 50.00</td>
-          <td class="text-end money" th:text="${@fmt.rupees(l.lineTotalPaise)}">Rs 7,500.00</td>
-          <td class="text-end" th:if="${l.onHand != null}" th:text="${@fmt.number(l.onHand)}">238</td>
-          <td class="text-end" th:if="${l.availableNow != null}">
-            <span th:text="${@fmt.number(l.availableNow)}">238</span>
-            <span class="badge bg-danger" th:if="${l.shortage > 0}" th:text="'short ' + ${l.shortage}">short</span>
-          </td>
-        </tr>
-      </tbody>
-      <tfoot><tr><th colspan="3" class="text-end">Total before GST</th>
-        <th class="text-end money" th:text="${@fmt.rupees(order.summary.totalPaise)}">Rs 7,500.00</th>
-        <th th:if="${order.summary.status.name() == 'SUBMITTED'}" colspan="2"></th></tr></tfoot>
-    </table>
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-8">
+      <div class="oa-table-card">
+        <div class="oa-card-head">
+          <span><i class="bi bi-box-seam me-1"></i>Order lines</span>
+          <span class="small text-muted" th:if="${st == 'SUBMITTED'}">Stock checked live</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr><th>Product</th><th class="text-end">Packets</th><th class="text-end">Price</th><th class="text-end">Amount</th>
+                  <th class="text-end" th:if="${st == 'SUBMITTED'}">In stock</th>
+                  <th class="text-end" th:if="${st == 'SUBMITTED'}">Available</th></tr>
+            </thead>
+            <tbody>
+              <tr th:each="l : ${order.lines}" th:classappend="${l.shortage != null and l.shortage > 0} ? 'table-danger'">
+                <td th:text="${l.itemName}">Murukku 200 g</td>
+                <td class="text-end" th:text="${@fmt.number(l.quantity)}">150</td>
+                <td class="text-end money" th:text="${@fmt.rupees(l.unitPricePaise)}">Rs 50.00</td>
+                <td class="text-end money" th:text="${@fmt.rupees(l.lineTotalPaise)}">Rs 7,500.00</td>
+                <td class="text-end" th:if="${l.onHand != null}" th:text="${@fmt.number(l.onHand)}">238</td>
+                <td class="text-end" th:if="${l.availableNow != null}">
+                  <span th:text="${@fmt.number(l.availableNow)}">238</span>
+                  <span class="badge status-REJECTED" th:if="${l.shortage > 0}" th:text="'short ' + ${l.shortage}">short</span>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot><tr><th colspan="3" class="text-end">Total before GST</th>
+              <th class="text-end money" th:text="${@fmt.rupees(order.summary.totalPaise)}">Rs 7,500.00</th>
+              <th th:if="${st == 'SUBMITTED'}" colspan="2"></th></tr></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <div class="card h-100">
+        <div class="oa-card-head"><span><i class="bi bi-percent me-1"></i>Amounts</span></div>
+        <div class="p-3">
+          <div class="d-flex justify-content-between"><span class="text-muted">Taxable value</span>
+            <span class="money" th:text="${@fmt.rupees(order.summary.totalPaise)}">Rs 7,500.00</span></div>
+          <div class="d-flex justify-content-between"><span class="text-muted">GST
+            <span class="oa-sub-cell" th:if="${order.summary.gstEstimated()}">(expected)</span></span>
+            <span class="money" th:text="${@fmt.rupees(order.summary.gstPaise)}">Rs 375.00</span></div>
+          <hr class="my-2">
+          <div class="d-flex justify-content-between fw-semibold"><span>Total</span>
+            <span class="money" th:text="${@fmt.rupees(order.summary.totalWithGstPaise)}">Rs 7,875.00</span></div>
+
+          <div class="mt-3 small" th:if="${invoice != null}">
+            Invoice <strong th:text="${invoice.invoiceNumber}">INV/2026-27/0001</strong> &middot;
+            <span class="money" th:text="${@fmt.rupees(invoice.totalPaise)}">Rs 7,875.00</span> including GST
+            (<span th:text="${invoice.status}">ISSUED</span>)
+            <div class="d-flex gap-2 mt-2">
+              <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/invoices/{id}(id=${invoice.id})}">
+                <i class="bi bi-file-earmark-text me-1"></i>Invoice</a>
+              <a class="btn btn-sm btn-outline-secondary" th:href="@{/admin/invoices/{id}/pdf(id=${invoice.id})}">
+                <i class="bi bi-download me-1"></i>PDF</a>
+            </div>
+          </div>
+          <div class="mt-3 small text-muted" th:if="${order.note}">Note: <span th:text="${order.note}">note</span></div>
+          <div class="mt-2 small" th:if="${order.decidedBy}">Approved / decided by <span th:text="${order.decidedBy}">admin</span></div>
+          <div class="mt-1 small" th:if="${order.dispatchedBy}">Goods dispatched by <span th:text="${order.dispatchedBy}">admin</span></div>
+          <div class="mt-2 small text-danger" th:if="${order.rejectReason}">Rejected: <span th:text="${order.rejectReason}">reason</span></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- SUBMITTED: adjust, approve or reject -->
-  <div th:if="${order.summary.status.name() == 'SUBMITTED'}">
-    <div class="card p-3 mb-3">
-      <h2 class="h6">Adjust a line</h2>
-      <form th:each="l : ${order.lines}" th:action="@{/admin/orders/{id}/lines/{item}(id=${order.summary.id}, item=${l.itemId})}"
-            method="post" class="row g-2 align-items-end mb-2">
-        <div class="col-12 col-md-4"><strong th:text="${l.itemName}">item</strong></div>
-        <div class="col-6 col-md-3"><label class="form-label small">Packets</label>
-          <input type="number" name="quantity" class="form-control" min="1" th:value="${l.quantity}" required></div>
-        <div class="col-6 col-md-3"><label class="form-label small">Price (Rs)</label>
-          <input type="number" name="priceRupees" class="form-control" min="0" step="0.01" th:value="${@fmt.plainRupees(l.unitPricePaise)}" required></div>
-        <div class="col-12 col-md-2"><button class="btn btn-outline-secondary w-100" type="submit">Save</button></div>
-      </form>
+  <div th:if="${st == 'SUBMITTED'}">
+    <div class="card mb-3">
+      <div class="oa-card-head"><span><i class="bi bi-pencil-square me-1"></i>Adjust a line</span>
+        <span class="small text-muted">Change the packets or the price before approving</span></div>
+      <div class="p-3">
+        <form th:each="l : ${order.lines}" th:action="@{/admin/orders/{id}/lines/{item}(id=${order.summary.id}, item=${l.itemId})}"
+              method="post" class="row g-2 align-items-end mb-2">
+          <div class="col-12 col-md-4"><strong th:text="${l.itemName}">item</strong></div>
+          <div class="col-6 col-md-3"><label class="form-label small">Packets</label>
+            <input type="number" name="quantity" class="form-control" min="1" th:value="${l.quantity}" required></div>
+          <div class="col-6 col-md-3"><label class="form-label small">Price (Rs)</label>
+            <input type="number" name="priceRupees" class="form-control" min="0" step="0.01" th:value="${@fmt.plainRupees(l.unitPricePaise)}" required></div>
+          <div class="col-12 col-md-2"><button class="btn btn-outline-secondary w-100" type="submit">Save</button></div>
+        </form>
+      </div>
     </div>
-    <div class="d-flex flex-wrap gap-2">
-      <form th:action="@{/admin/orders/{id}/approve(id=${order.summary.id})}" method="post">
-        <button class="btn btn-success btn-lg-touch" type="submit" th:disabled="${order.anyShortage}">Approve</button>
-      </form>
-      <form th:action="@{/admin/orders/{id}/reject(id=${order.summary.id})}" method="post" class="d-flex gap-2 flex-grow-1">
-        <input name="reason" class="form-control" placeholder="Reason for rejecting" maxlength="300" required>
-        <button class="btn btn-outline-danger" type="submit">Reject</button>
-      </form>
+    <div class="card">
+      <div class="oa-card-head"><span><i class="bi bi-ui-checks me-1"></i>Decision</span></div>
+      <div class="p-3">
+        <div class="d-flex flex-wrap gap-2">
+          <form th:action="@{/admin/orders/{id}/approve(id=${order.summary.id})}" method="post">
+            <button class="btn btn-success btn-lg-touch" type="submit" th:disabled="${order.anyShortage}">
+              <i class="bi bi-check2-circle me-1"></i>Approve</button>
+          </form>
+          <form th:action="@{/admin/orders/{id}/reject(id=${order.summary.id})}" method="post" class="d-flex gap-2 flex-grow-1">
+            <input name="reason" class="form-control" placeholder="Reason for rejecting" maxlength="300" required>
+            <button class="btn btn-outline-danger" type="submit">Reject</button>
+          </form>
+        </div>
+        <p class="text-danger small mt-2 mb-0" th:if="${order.anyShortage}">
+          <i class="bi bi-exclamation-triangle-fill me-1"></i>Stock is short. Reduce the quantity above or reject the order.</p>
+      </div>
     </div>
-    <p class="text-danger small mt-2" th:if="${order.anyShortage}">Stock is short. Reduce the quantity above or reject the order.</p>
   </div>
 
   <!-- APPROVED: raise the invoice -->
-  <div class="card p-3" th:if="${order.summary.status.name() == 'APPROVED'}">
-    <form th:action="@{/admin/orders/{id}/invoice(id=${order.summary.id})}" method="post" class="row g-2 align-items-end">
-      <div class="col-12 col-md-4"><label class="form-label">Invoice date</label>
-        <input type="date" name="invoiceDate" class="form-control" th:value="${today}" required></div>
-      <div class="col-12 col-md-4"><button class="btn btn-primary btn-lg-touch w-100" type="submit">Raise invoice</button></div>
-    </form>
+  <div class="card" th:if="${st == 'APPROVED'}">
+    <div class="oa-card-head"><span><i class="bi bi-file-earmark-text me-1"></i>Raise the GST invoice</span></div>
+    <div class="p-3">
+      <form th:action="@{/admin/orders/{id}/invoice(id=${order.summary.id})}" method="post" class="row g-2 align-items-end">
+        <div class="col-12 col-md-4"><label class="form-label">Invoice date</label>
+          <input type="date" name="invoiceDate" class="form-control" th:value="${today}" required></div>
+        <div class="col-12 col-md-4"><button class="btn btn-primary btn-lg-touch w-100" type="submit">Raise invoice</button></div>
+      </form>
+    </div>
   </div>
 
   <!-- INVOICED: dispatch -->
-  <div class="card p-3" th:if="${order.summary.status.name() == 'INVOICED'}">
-    <form th:action="@{/admin/orders/{id}/dispatch(id=${order.summary.id})}" method="post">
-      <button class="btn btn-primary btn-lg-touch" type="submit">Dispatch (stock goes down now)</button>
-    </form>
+  <div class="card" th:if="${st == 'INVOICED'}">
+    <div class="oa-card-head"><span><i class="bi bi-truck me-1"></i>Dispatch</span></div>
+    <div class="p-3">
+      <form th:action="@{/admin/orders/{id}/dispatch(id=${order.summary.id})}" method="post">
+        <button class="btn btn-primary btn-lg-touch" type="submit">Dispatch (stock goes down now)</button>
+      </form>
+    </div>
   </div>
-
-  <a class="btn btn-link mt-2" th:href="@{/admin/orders}">&larr; Order desk</a>
 </div>
 <th:block th:replace="~{fragments :: scripts}"></th:block>
 </body>

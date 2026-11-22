@@ -1,24 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Production run')}"></head>
 <body>
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
-<div class="container">
+<div class="container-xxl">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h4 mb-0">Run #<span th:text="${run.summary.id}">1</span> &middot; <span th:text="${run.summary.product}">Murukku</span></h1>
-    <span class="badge bg-secondary" id="run-status" th:text="${run.summary.status}">POSTED</span>
+    <span class="badge oa-badge" th:classappend="'status-' + ${run.summary.status}" id="run-status" th:text="${run.summary.status}">POSTED</span>
   </div>
   <div class="row g-3 mb-3">
     <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Expected packets</div><div class="h5" th:text="${run.summary.expectedPackets}">250</div></div></div>
     <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Good packets</div><div class="h5" id="good-packets" th:text="${run.summary.goodPackets}">188</div></div></div>
     <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Yield variance (tolerance <span th:text="${run.tolerancePct}">3</span>%)</div>
       <div class="h5"><span id="yield" th:text="${run.summary.yieldVariancePct} + '%'">-6%</span>
-        <span class="badge bg-danger" id="yield-flag" th:if="${run.summary.flagged}">flagged</span></div></div></div>
+        <span class="badge oa-badge status-FLAGGED" id="yield-flag" th:if="${run.summary.flagged}"><i class="bi bi-flag-fill" aria-hidden="true"></i>flagged</span></div></div></div>
     <div class="col-md-3"><div class="card p-3"><div class="text-muted small">Cost per packet</div>
       <div class="h5 money" id="cost-per-packet" th:text="${@fmt.rupeesRounded(run.summary.costPerPacket)}">31.14</div></div></div>
   </div>
-  <div class="table-responsive card p-2 mb-3">
+  <div class="oa-table-card table-responsive mb-3">
     <table class="table mb-0 align-middle">
       <thead><tr><th>Material</th><th class="text-end">Planned</th><th class="text-end">Actual</th><th class="text-end">Variance</th><th class="text-end">Cost</th></tr></thead>
       <tbody>
@@ -27,7 +27,7 @@
           <td class="text-end" th:text="${l.plannedReadable}">40 kg</td>
           <td class="text-end" th:text="${l.actualReadable}">40 kg</td>
           <td class="text-end"><span th:text="${l.variancePct} + '%'">0%</span>
-            <span class="badge bg-danger" th:if="${l.flagged}">flagged</span></td>
+            <span class="badge oa-badge status-FLAGGED" th:if="${l.flagged}"><i class="bi bi-flag-fill" aria-hidden="true"></i>flagged</span></td>
           <td class="text-end money" th:text="${@fmt.rupees(l.lineCostPaise)}">1,800</td>
         </tr>
       </tbody>
