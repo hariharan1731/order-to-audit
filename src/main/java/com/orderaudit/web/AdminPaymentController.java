@@ -51,6 +51,7 @@ public class AdminPaymentController {
         }
         model.addAttribute("debtors", debtors);
         model.addAttribute("total", debtors.stream().mapToLong(Debtor::outstandingPaise).sum());
+        model.addAttribute("allCustomers", customers.activeList());   // so a fully paid customer's payments can still be opened
         return "admin/payments";
     }
 
@@ -61,6 +62,7 @@ public class AdminPaymentController {
         model.addAttribute("customer", customer);
         model.addAttribute("open", receivables.openInvoices(id));
         model.addAttribute("owed", receivables.customerOutstanding(id));
+        model.addAttribute("history", receivables.paymentsOf(id));
         model.addAttribute("methods", PaymentMethod.values());
         model.addAttribute("today", ReportPeriod.today());
         return "admin/payment-form";
@@ -79,5 +81,20 @@ public class AdminPaymentController {
             redirect.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/payments/customers/" + id;
+    }
+
+    /** Cancel a payment (bounced cheque, wrong customer...). customerId is only used to come back to the same page. */
+    @PostMapping("/{paymentId}/reverse")
+    public String reverse(@PathVariable long paymentId, @RequestParam long customerId,
+                          @RequestParam String reason,
+                          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate reversalDate,
+                          Authentication auth, RedirectAttributes redirect) {
+        try {
+            receivables.reversePayment(paymentId, reversalDate, reason, auth.getName());
+            redirect.addFlashAttribute("message", "Payment reversed. The invoices it paid are outstanding again.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/payments/customers/" + customerId;
     }
 }

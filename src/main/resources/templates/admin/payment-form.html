@@ -40,6 +40,45 @@
     <p class="small text-muted mt-2 mb-3">The amount is applied to the oldest unpaid invoices first.</p>
     <button class="btn btn-primary btn-lg-touch" type="submit">Record payment</button>
   </form>
+  <div class="card p-3 mb-3" th:if="${#lists.isEmpty(open)}">
+    <strong>No unpaid invoices.</strong> <span class="text-muted">Everything this customer owes is paid.</span>
+  </div>
+
+  <h2 class="h6 mt-4" id="payment-history-title">Payments received</h2>
+  <p class="small text-muted" th:if="${#lists.isEmpty(history)}">No payments recorded yet.</p>
+  <div class="oa-table-card table-responsive mb-3" id="payment-history" th:unless="${#lists.isEmpty(history)}">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th>Invoices</th><th class="text-end">Amount</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="p : ${history}" th:classappend="${p.reversed} ? 'text-muted'">
+          <td th:text="${@fmt.date(p.paymentDate)}">date</td>
+          <td th:text="${p.method}">CASH</td>
+          <td th:text="${p.reference}">ref</td>
+          <td class="oa-id" th:text="${p.invoices}">INV</td>
+          <td class="text-end money" th:text="${@fmt.rupees(p.amountPaise)}">Rs 4,000.00</td>
+          <td>
+            <span class="badge oa-badge status-APPROVED" th:unless="${p.reversed}"><i class="bi bi-check-circle" aria-hidden="true"></i>Counted</span>
+            <span class="badge oa-badge status-REVERSED" th:if="${p.reversed}"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>Reversed</span>
+            <div class="small" th:if="${p.reversed}">
+              <span th:text="${@fmt.date(p.reversalDate)}">date</span>: <span th:text="${p.reversalReason}">reason</span>
+              (<span th:text="${p.reversedBy}">admin</span>)
+            </div>
+          </td>
+          <td class="text-end">
+            <details th:unless="${p.reversed}">
+              <summary class="btn btn-sm btn-outline-danger"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Reverse</summary>
+              <form th:action="@{/admin/payments/{pid}/reverse(pid=${p.paymentId})}" method="post" class="d-flex flex-wrap gap-2 mt-2 justify-content-end">
+                <input type="hidden" name="customerId" th:value="${customer.id}">
+                <input name="reason" class="form-control form-control-sm w-auto" maxlength="200" required placeholder="Why? e.g. cheque bounced" aria-label="Reason for reversal">
+                <input type="date" name="reversalDate" class="form-control form-control-sm w-auto" th:value="${today}" required aria-label="Reversal date">
+                <button class="btn btn-sm btn-danger" type="submit">Confirm reversal</button>
+              </form>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
   <a class="btn btn-link mt-2" th:href="@{/admin/payments}">&larr; Payments</a>
 </div>
 <th:block th:replace="~{fragments :: scripts}"></th:block>

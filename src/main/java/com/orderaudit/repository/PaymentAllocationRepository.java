@@ -10,11 +10,14 @@ public interface PaymentAllocationRepository extends JpaRepository<PaymentAlloca
 
     List<PaymentAllocation> findByPaymentId(Long paymentId);
 
-    /** Total paid against one invoice (null if nothing yet). */
-    @Query("select sum(a.amountPaise) from PaymentAllocation a where a.invoiceId = :invoiceId")
+    /** Total paid against one invoice (null if nothing yet). Reversed payments do not count. */
+    @Query("select sum(a.amountPaise) from PaymentAllocation a where a.invoiceId = :invoiceId "
+            + "and not exists (select 1 from PaymentReversal r where r.paymentId = a.paymentId)")
     Long paidAgainst(@Param("invoiceId") Long invoiceId);
 
-    /** Rows of {invoiceId, totalPaid} for every invoice that has any payment. */
-    @Query("select a.invoiceId, sum(a.amountPaise) from PaymentAllocation a group by a.invoiceId")
+    /** Rows of {invoiceId, totalPaid} for every invoice that has any live (not reversed) payment. */
+    @Query("select a.invoiceId, sum(a.amountPaise) from PaymentAllocation a "
+            + "where not exists (select 1 from PaymentReversal r where r.paymentId = a.paymentId) "
+            + "group by a.invoiceId")
     List<Object[]> paidPerInvoice();
 }

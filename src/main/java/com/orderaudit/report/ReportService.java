@@ -355,16 +355,29 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public ReportTable collections(ReportPeriod p) {
+        // A payment shows on its own date; a reversal shows as a negative line on the reversal date,
+        // so a month that is already reported never changes after the fact.
         List<List<Object>> rows = jdbc.query(
-                "SELECT p.payment_date, c.name AS customer, p.method, p.reference, "
-                        + "string_agg(i.invoice_number, ', ' ORDER BY i.invoice_number) AS invoices, p.amount_paise "
+                "SELECT d, customer, method, reference, invoices, amount FROM ("
+                        + "SELECT p.payment_date AS d, p.id AS pid, 0 AS k, c.name AS customer, p.method AS method, "
+                        + "p.reference AS reference, string_agg(i.invoice_number, ', ' ORDER BY i.invoice_number) AS invoices, "
+                        + "p.amount_paise AS amount "
                         + "FROM payment p JOIN customer c ON c.id = p.customer_id "
                         + "JOIN payment_allocation a ON a.payment_id = p.id JOIN invoice i ON i.id = a.invoice_id "
-                        + "WHERE p.payment_date BETWEEN ? AND ? GROUP BY p.id, c.name ORDER BY p.payment_date, p.id",
-                (rs, i) -> row(rs.getObject("payment_date", LocalDate.class), rs.getString("customer"),
+                        + "WHERE p.payment_date BETWEEN ? AND ? GROUP BY p.id, c.name "
+                        + "UNION ALL "
+                        + "SELECT r.reversal_date, p.id, 1, c.name, 'REVERSED', "
+                        + "'Reverses payment #' || p.id || ': ' || r.reason, "
+                        + "string_agg(i.invoice_number, ', ' ORDER BY i.invoice_number), -p.amount_paise "
+                        + "FROM payment_reversal r JOIN payment p ON p.id = r.payment_id "
+                        + "JOIN customer c ON c.id = p.customer_id "
+                        + "JOIN payment_allocation a ON a.payment_id = p.id JOIN invoice i ON i.id = a.invoice_id "
+                        + "WHERE r.reversal_date BETWEEN ? AND ? GROUP BY r.id, p.id, c.name"
+                        + ") x ORDER BY d, pid, k",
+                (rs, i) -> row(rs.getObject("d", LocalDate.class), rs.getString("customer"),
                         rs.getString("method"), rs.getString("reference"), rs.getString("invoices"),
-                        rs.getLong("amount_paise")),
-                p.from(), p.to());
+                        rs.getLong("amount")),
+                p.from(), p.to(), p.from(), p.to());
         return new ReportTable("Payments and collections", p.label(),
                 List.of(ReportColumn.date("Date"), ReportColumn.text("Customer"), ReportColumn.text("Method"),
                         ReportColumn.text("Reference"), ReportColumn.text("Against invoices"),
