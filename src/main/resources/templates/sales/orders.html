@@ -128,6 +128,30 @@
       </table>
     </div>
   </div>
+
+  <!-- Customer-wise sales for the orders shown above (the filter applies). Rejected orders are not counted. -->
+  <div class="oa-table-card mt-3" id="customer-sales" th:unless="${#lists.isEmpty(customerSales)}">
+    <div class="oa-card-head">
+      <span><i class="bi bi-people me-1"></i>My sales by customer</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr><th>Customer</th><th class="text-end">Orders</th><th class="text-end">Packets</th>
+            <th class="text-end">Billed (incl. GST)</th><th class="text-end">Waiting (est.)</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="c : ${customerSales}">
+            <td th:text="${c.customerName}">Retailer A</td>
+            <td class="text-end" th:text="${c.orders}">1</td>
+            <td class="text-end" th:text="${@fmt.number(c.packets)}">150</td>
+            <td class="text-end money fw-semibold" th:text="${@fmt.rupees(c.billedPaise)}">Rs 7,875.00</td>
+            <td class="text-end money" th:text="${@fmt.rupees(c.pendingPaise)}">Rs 0.00</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 <th:block th:replace="~{fragments :: scripts}"></th:block>
 </body>

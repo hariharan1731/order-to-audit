@@ -112,6 +112,22 @@ class WebOfficeIntegrationTest {
     }
 
     @Test
+    void theInvoiceCanBeSharedByWhatsAppOrEmail() throws Exception {
+        assertThat(com.orderaudit.web.InvoiceShare.message(invoice)).isEqualTo(
+                "Tax invoice INV/2026-27/0001 dated " + invoice.getInvoiceDate().format(
+                        java.time.format.DateTimeFormatter.ofPattern("d MMM yyyy", java.util.Locale.ENGLISH))
+                        + " for Retailer A. Taxable value Rs 7,500.00, CGST + SGST Rs 375.00, total Rs 7,875.00."
+                        + " The invoice PDF is attached.");
+
+        String page = body(get("/admin/invoices/" + invoice.getId()).with(admin()));
+        assertThat(page).contains("id=\"share-whatsapp\"")
+                .contains("https://wa.me/?text=Tax%20invoice%20INV%2F2026-27%2F0001%20dated")
+                .contains("total%20Rs%207%2C875.00")
+                .contains("id=\"share-email\"")
+                .contains("mailto:?subject=Tax%20invoice%20INV%2F2026-27%2F0001&amp;body=Tax%20invoice");
+    }
+
+    @Test
     void anUnknownInvoiceIsA404() throws Exception {
         mvc.perform(get("/admin/invoices/999999").with(admin())).andExpect(status().isNotFound());
     }

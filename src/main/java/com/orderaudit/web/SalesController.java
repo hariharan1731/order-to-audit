@@ -61,7 +61,9 @@ public class SalesController {
                            Model model) {
         OrderFilter filter = new OrderFilter(q, status, from, to, sort);
         String me = auth.getName();
-        model.addAttribute("orders", queries.search(me, q, filter.statusValue(), from, to, filter.sortOrDefault()));
+        var orders = queries.search(me, q, filter.statusValue(), from, to, filter.sortOrDefault());
+        model.addAttribute("orders", orders);
+        model.addAttribute("customerSales", OrderQueryService.customerWise(orders));
         model.addAttribute("stats", queries.stats(me));
         model.addAttribute("filter", filter);
         model.addAttribute("statuses", OrderStatus.values());
