@@ -137,6 +137,18 @@ class WebOrderDashboardIntegrationTest {
     }
 
     @Test
+    void theOrderPageNamesTheTaxThatApplies() throws Exception {
+        // Distributor B is in Karnataka (29): inter-state, so IGST, still expected because it is not invoiced.
+        String distributor = body(get("/admin/orders/" + distributorOrder.getId()).with(admin()));
+        String tax = distributor.substring(distributor.indexOf("id=\"tax-name\""));
+        assertThat(tax).startsWith("id=\"tax-name\"><span>IGST</span>").contains("(expected)");
+        // Retailer A is in Tamil Nadu (33) like the factory: CGST + SGST, taken from the real invoice.
+        String retailer = body(get("/admin/orders/" + retailerOrder.getId()).with(admin()));
+        assertThat(retailer).contains("id=\"tax-name\"><span>CGST + SGST</span>");
+        assertThat(body(get("/sales/orders/" + distributorOrder.getId()).with(ravi()))).contains("<span>IGST</span>");
+    }
+
+    @Test
     void aRejectedOrderIsNotCountedInCustomerWiseSales() {
         orderService.reject(distributorOrder.getId(), "admin1", "Not enough stock");
         List<OrderQueryService.CustomerSales> rows =

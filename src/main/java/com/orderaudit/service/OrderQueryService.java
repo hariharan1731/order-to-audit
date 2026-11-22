@@ -35,11 +35,17 @@ public class OrderQueryService {
      * One row of an order list.
      * totalPaise is before GST (price x quantity). gstPaise and totalWithGstPaise come from the real invoice once
      * the order is invoiced; before that they are what the invoice WOULD be at today's rates, and gstEstimated() is
-     * true so the screen can say so. products is a short description like "Murukku 200 g" or "Murukku 200 g +1 more".
+     * true so the screen can say so. intraState: true means CGST + SGST (customer in the factory's state), false
+     * means IGST; taken from the invoice once there is one. products is a short description like "Murukku 200 g" or "Murukku 200 g +1 more".
      */
     public record OrderSummary(long id, String customerName, OrderStatus status, Instant createdAt,
                                String salesman, long totalPaise, long packets, long gstPaise,
-                               long totalWithGstPaise, String invoiceNumber, String products) {
+                               long totalWithGstPaise, String invoiceNumber, String products, boolean intraState) {
+
+        /** "CGST + SGST" or "IGST": the tax this order is (or will be) invoiced with. */
+        public String taxName() {
+            return intraState ? "CGST + SGST" : "IGST";
+        }
 
         /** True while no invoice exists yet, so the GST shown is an expectation and not a document. */
         public boolean gstEstimated() {
@@ -267,7 +273,8 @@ public class OrderQueryService {
 
             result.add(new OrderSummary(order.getId(), customerName, order.getStatus(), order.getCreatedAt(),
                     order.getSalesman(), total, packets, gst, withGst,
-                    invoice.map(Invoice::getInvoiceNumber).orElse(null), describe(names)));
+                    invoice.map(Invoice::getInvoiceNumber).orElse(null), describe(names),
+                    invoice.map(Invoice::isIntraState).orElse(intra)));
         }
         return result;
     }

@@ -44,7 +44,7 @@ class DataSeederIntegrationTest {
 
     @Test
     void oneDemoLoginExistsPerRoleWithAHashedPassword() {
-        for (String name : new String[] {"ravi", "admin", "prod", "accounts", "owner"}) {
+        for (String name : new String[] {"ravi", "suresh", "admin", "prod", "accounts", "owner"}) {
             var user = userRepository.findAll().stream().filter(u -> u.getUsername().equals(name)).findFirst();
             assertThat(user).as(name).isPresent();
             assertThat(user.get().getPasswordHash()).startsWith("{bcrypt}");

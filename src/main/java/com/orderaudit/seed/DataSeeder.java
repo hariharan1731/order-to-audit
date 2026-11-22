@@ -114,6 +114,8 @@ public class DataSeeder implements ApplicationRunner {
 
     private void seedUsers() {
         users.create("ravi", "Ravi (Salesman)", demoPassword, Role.SALESMAN, "seed");
+        // Second salesman, so the benchmark's "Salesman B" order is placed by a different person.
+        users.create("suresh", "Suresh (Salesman)", demoPassword, Role.SALESMAN, "seed");
         users.create("admin", "Admin", demoPassword, Role.ADMIN, "seed");
         users.create("prod", "Production Supervisor", demoPassword, Role.PRODUCTION_SUPERVISOR, "seed");
         users.create("accounts", "Accountant", demoPassword, Role.ACCOUNTANT, "seed");
