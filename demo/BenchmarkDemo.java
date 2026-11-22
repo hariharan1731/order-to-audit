@@ -7,6 +7,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Route;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.LoadState;
 import com.microsoft.playwright.options.SelectOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -80,6 +81,8 @@ public class BenchmarkDemo {
                 route.fulfill(new Route.FulfillOptions().setResponse(response).setHeaders(headers));
             });
             page = context.newPage();
+            // Dark from the very first frame (a new page is white until something is drawn).
+            page.setContent("<html><body style=\"margin:0;background:#05100c\"></body></html>");
             page.setDefaultTimeout(20_000);
             try {
                 run();
@@ -155,7 +158,7 @@ public class BenchmarkDemo {
         Frame phone = phoneMode("Step 4 of 9 · Salesman A on his phone",
                 "Ravi picks the customer, the price comes from the price list, he types the quantity and sends. No phone call, no WhatsApp.");
         login(phone, "ravi");
-        phone.navigate(url("/sales/orders/new"));
+        go(phone, "/sales/orders/new");
         hold(1500);
         phone.selectOption("#customerId", new SelectOption().setLabel("Retailer A"));
         hold(800);
@@ -202,7 +205,7 @@ public class BenchmarkDemo {
         phone = phoneMode("Back on the salesman's phone",
                 "Ravi sees the status move to DISPATCHED, and his sales per customer.");
         login(phone, "ravi");
-        phone.navigate(url("/sales/orders"));
+        go(phone, "/sales/orders");
         hold(4000);
         phone.locator("#customer-sales").scrollIntoViewIfNeeded();
         hold(2500);
@@ -213,7 +216,7 @@ public class BenchmarkDemo {
         phone = phoneMode("Step 6 of 9 · Salesman B orders for Distributor B",
                 "Suresh, a second salesman, orders 120 packets for Distributor B in Karnataka.");
         login(phone, "suresh");
-        phone.navigate(url("/sales/orders/new"));
+        go(phone, "/sales/orders/new");
         hold(1500);
         phone.selectOption("#customerId", new SelectOption().setLabel("Distributor B"));
         type(phone.locator("input.qty-input").first(), "120");
@@ -293,11 +296,19 @@ public class BenchmarkDemo {
         page.navigate(url("/audit"));
         caption("Audit trail",
                 "Every business action is logged with user and time, in the same transaction as the action.");
-        hold(5000);
+        hold(3500);
+        caption("Audit trail · every step, every person",
+                "The flour purchase by <b>prod</b>, the orders submitted by <b>ravi</b> and <b>suresh</b>, approval, invoice, dispatch and payment by <b>admin</b>.");
+        show(page.locator("tr:has-text('ORDER_SUBMITTED'):has-text('suresh')").first(), 3000);
+        show(page.locator("tr:has-text('PURCHASE_RECORDED')").first(), 3500);
         desktopAs("ravi");
         caption("Role-based access",
-                "The salesman's menu has only his orders. Production, office, reports and owner pages are refused with HTTP 403 even by direct URL (covered by the security tests).");
-        show(page.locator("nav").first(), 6000);
+                "The salesman's menu has only his orders. Each role sees only the screens it needs.");
+        show(page.locator("nav").first(), 4500);
+        page.navigate(url("/owner"));
+        caption("Role-based access · direct URL refused",
+                "Typing the owner dashboard address as a salesman gives HTTP 403 and a plain \"Not allowed\" page.");
+        show(page.locator("#error-page"), 5000);
 
         endCard();
     }
@@ -312,7 +323,17 @@ public class BenchmarkDemo {
         page.waitForTimeout(ms);
     }
 
+    /** Waits until the page has finished loading (styles, fonts, charts), so no half-drawn frame is recorded. */
+    static void settle() {
+        try {
+            page.waitForLoadState(LoadState.NETWORKIDLE, new Page.WaitForLoadStateOptions().setTimeout(8000));
+        } catch (RuntimeException ignored) {
+            // a page that keeps a connection open never goes idle; it is still fully drawn by now
+        }
+    }
+
     static void caption(String title, String body) {
+        settle();
         String json = "{\"t\":" + js(title) + ",\"b\":" + js(body) + "}";
         page.evaluate("c => { sessionStorage.setItem('demoCap', c); "
                 + "const e = document.getElementById('demo-cap'); if (e) e.remove(); }", json);
@@ -325,6 +346,7 @@ public class BenchmarkDemo {
 
     /** Scrolls to an element and outlines it in gold for a moment. */
     static void show(Locator target, long ms) {
+        settle();
         try {
             target.scrollIntoViewIfNeeded();
             target.evaluate("e => { e.style.outline = '3px solid #fbbf24'; e.style.outlineOffset = '3px'; "
@@ -346,20 +368,34 @@ public class BenchmarkDemo {
 
     static void login(Page p, String user) {
         p.navigate(url("/login"));
+        p.waitForLoadState(LoadState.NETWORKIDLE);       // icon font in place before anything is typed
         type(p.locator("#username"), user);
         type(p.locator("#password"), PASSWORD);
         p.click("button[type=submit]");
         p.waitForURL(u -> !u.contains("/login"));
+        settle();
         hold(1200);
     }
 
     static void login(Frame f, String user) {
-        f.navigate(url("/login"));
+        go(f, "/login");
         type(f.locator("#username"), user);
         type(f.locator("#password"), PASSWORD);
         f.click("button[type=submit]");
         f.waitForURL(u -> !u.contains("/login"));
+        f.waitForLoadState(LoadState.NETWORKIDLE);
         hold(1200);
+    }
+
+    /** Opens a page inside the phone frame and waits until its styles and icon font have loaded. */
+    static void go(Frame f, String path) {
+        f.navigate(url(path));
+        try {
+            f.waitForLoadState(LoadState.NETWORKIDLE, new Frame.WaitForLoadStateOptions().setTimeout(8000));
+        } catch (RuntimeException ignored) {
+            // still drawn; just never fully idle
+        }
+        hold(300);
     }
 
     /** Signs out (drops the session cookie) and signs in again as another user on the full-size page. */
@@ -415,7 +451,6 @@ public class BenchmarkDemo {
     }
 
     static void titleCard() {
-        page.navigate(url("/login"));       // same origin, so captions can use sessionStorage later
         card("<div style=\"color:#34d399;letter-spacing:.14em;text-transform:uppercase;font-size:15px\">"
                 + "Order-to-Audit · NIT Tiruchirappalli internship task</div>"
                 + "<div style=\"font-size:44px;font-weight:800;margin:14px 0\">Section 5 benchmark, end to end</div>"
