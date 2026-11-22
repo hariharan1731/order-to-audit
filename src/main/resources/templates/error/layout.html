@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<!--
+  Shared card for the error pages (403.html, 404.html, 4xx.html, 5xx.html). Spring Boot picks error/<status>.html
+  first, then error/4xx.html or error/5xx.html. Only the status, a plain message and the path are shown,
+  never the exception text or a stack trace.
+-->
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="oa-login-box" th:fragment="card(title, icon, message)">
+  <div class="card p-4" id="error-page">
+    <div class="oa-brand oa-brand-dark mb-3">
+      <span class="oa-logo"><i class="bi bi-boxes"></i></span>
+      <span>
+        <span class="oa-name">Order to Audit</span>
+        <span class="oa-tagline">Factory &amp; order management</span>
+      </span>
+    </div>
+    <h1 class="h4 mb-2"><i class="bi me-1" th:classappend="${icon}" aria-hidden="true"></i><span th:text="${title}">Error</span></h1>
+    <p class="mb-2" th:text="${message}">Something went wrong.</p>
+    <p class="small text-muted mb-3">Error <span th:text="${status}">500</span><span th:if="${path}"> on
+      <code th:text="${path}">/path</code></span></p>
+    <div class="d-flex gap-2">
+      <a class="btn btn-primary" th:href="@{/}"><i class="bi bi-house me-1" aria-hidden="true"></i>Go to my home page</a>
+      <a class="btn btn-outline-secondary" href="javascript:history.back()">Back</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

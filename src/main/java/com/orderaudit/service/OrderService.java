@@ -104,6 +104,8 @@ public class OrderService {
             long price = prices.priceFor(customerId, request.itemId());   // fails clearly if no price is set
             lines.save(new OrderLine(order.getId(), request.itemId(), request.quantity(), price));
         }
+        audit.record(salesman.trim(), "ORDER_SUBMITTED", "ORDER", order.getId(),
+                requests.size() + " line(s) for customer " + customerId);
         return order;
     }
 

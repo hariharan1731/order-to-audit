@@ -132,7 +132,7 @@ class OrderStatusRaceIntegrationTest {
         assertThat(succeeded).isEqualTo(1);
         assertThat(invoiceRepository.findByOrderId(order.getId())).isPresent();
         assertThat(audit.forEntity("ORDER", order.getId())).extracting(AuditEntry::action)
-                .containsExactly("ORDER_APPROVED");
+                .containsExactly("ORDER_SUBMITTED", "ORDER_APPROVED");
         assertThat(orderRepository.findById(order.getId()).orElseThrow().getStatus()).isEqualTo(OrderStatus.INVOICED);
     }
 
@@ -170,10 +170,10 @@ class OrderStatusRaceIntegrationTest {
         List<String> trail = audit.forEntity("ORDER", order.getId()).stream().map(AuditEntry::action).toList();
         if (approved) {
             assertThat(status).isEqualTo(OrderStatus.APPROVED);
-            assertThat(trail).containsExactly("ORDER_APPROVED");
+            assertThat(trail).containsExactly("ORDER_SUBMITTED", "ORDER_APPROVED");
         } else {
             assertThat(status).isEqualTo(OrderStatus.REJECTED);
-            assertThat(trail).containsExactly("ORDER_REJECTED");
+            assertThat(trail).containsExactly("ORDER_SUBMITTED", "ORDER_REJECTED");
         }
     }
 }

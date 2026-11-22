@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Not allowed')}"></head>
+<body class="oa-login">
+<div th:replace="~{error/layout :: card('Not allowed', 'bi-shield-lock', 'Your role cannot open this page. Each role sees only the screens it needs.')}"></div>
+</body>
+</html>

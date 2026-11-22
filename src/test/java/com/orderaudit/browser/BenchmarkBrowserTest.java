@@ -219,8 +219,16 @@ class BenchmarkBrowserTest {
         loginAs("ravi");
         var production = page.navigate(url("/production"));
         assertThat(production.status()).isEqualTo(403);
+        assertThat(page.locator("#error-page")).containsText("Not allowed");      // styled page, not Whitelabel
         var owner = page.navigate(url("/owner"));
         assertThat(owner.status()).isEqualTo(403);
+        assertThat(page.locator("#error-page")).containsText("Not allowed");
+        assertThat(page.locator("body")).not().containsText("Whitelabel");
+
+        var missing = page.navigate(url("/no-such-page"));
+        assertThat(missing.status()).isEqualTo(404);
+        assertThat(page.locator("#error-page")).containsText("Page not found");
+        assertThat(page.locator("#error-page")).containsText("/no-such-page");
     }
 
     @Test

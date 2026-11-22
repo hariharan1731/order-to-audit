@@ -14,7 +14,7 @@ flowchart LR
   S --> R[Repositories: Spring Data JPA]
   R --> D[(PostgreSQL)]
   S --> RP[Reports: HTML / CSV / Excel / PDF]
-  F[Flyway migrations V1-V12] --> D
+  F[Flyway migrations V1-V13] --> D
 ```
 Controllers never hold business rules; services own `@Transactional`; the database also protects itself
 (CHECK constraints, unique keys, triggers), so a bug in Java cannot corrupt the ledger.
@@ -98,6 +98,6 @@ Security, first-match URL rules ending in "anything else needs login". Five role
 but not change it. Password rule: 8–72 chars, a letter and a digit, not equal to the username.
 
 ## 9. Testing
-505 automated tests on a real PostgreSQL (Testcontainers): unit tests for money/costing/GST maths, integration
+508 automated tests on a real PostgreSQL (Testcontainers): unit tests for money/costing/GST maths, integration
 tests per service, MockMvc tests for every screen and role rule, and a Playwright browser test that walks the
 whole official benchmark. Benchmark figures are asserted as given and never adjusted to make a test pass.

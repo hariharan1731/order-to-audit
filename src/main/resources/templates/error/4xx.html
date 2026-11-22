@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Request not accepted')}"></head>
+<body class="oa-login">
+<div th:replace="~{error/layout :: card('Request not accepted', 'bi-exclamation-triangle', 'The request could not be handled. Check the values you entered and try again.')}"></div>
+</body>
+</html>

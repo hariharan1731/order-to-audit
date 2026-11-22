@@ -84,6 +84,39 @@ class ReceivablesIntegrationTest {
     }
 
     @Test
+    void theSameRequestIdRecordsThePaymentOnlyOnce() {
+        setUp();
+        Customer c = customer("Twice Clicked");
+        Invoice invoice = invoice(c, 10, TODAY);                                 // Rs 525
+
+        Payment first = receivables.recordPaymentOldestFirst(c.getId(), TODAY, PaymentMethod.CASH, null, "admin",
+                10_000, "form-123");
+        Payment second = receivables.recordPaymentOldestFirst(c.getId(), TODAY, PaymentMethod.CASH, null, "admin",
+                10_000, "form-123");
+
+        assertThat(second.getId()).isEqualTo(first.getId());
+        assertThat(receivables.paymentsOf(c.getId())).hasSize(1);
+        assertThat(receivables.outstandingOfInvoice(invoice.getId())).isEqualTo(42_500);   // paid once, not twice
+
+        receivables.recordPaymentOldestFirst(c.getId(), TODAY, PaymentMethod.CASH, null, "admin", 10_000, "form-456");
+        assertThat(receivables.paymentsOf(c.getId())).hasSize(2);                // a new form is a new payment
+    }
+
+    @Test
+    void aRequestIdUsedForOneCustomerCannotPayAnother() {
+        setUp();
+        Customer a = customer("First Customer");
+        Customer b = customer("Second Customer");
+        invoice(a, 10, TODAY);
+        invoice(b, 10, TODAY);
+        receivables.recordPaymentOldestFirst(a.getId(), TODAY, PaymentMethod.CASH, null, "admin", 10_000, "form-x");
+
+        assertThatThrownBy(() -> receivables.recordPaymentOldestFirst(b.getId(), TODAY, PaymentMethod.CASH, null,
+                "admin", 10_000, "form-x")).isInstanceOf(IllegalArgumentException.class);
+        assertThat(receivables.paymentsOf(b.getId())).isEmpty();
+    }
+
+    @Test
     void payingTheRestClosesTheInvoice() {
         setUp();
         Customer c = customer("Closer");

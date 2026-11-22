@@ -92,8 +92,9 @@ class AuditAcrossWorkflowIntegrationTest {
                 List.of(new AllocationRequest(invoice.getId(), 400_000))).getId();
 
         List<AuditEntry> orderTrail = audit.forEntity("ORDER", order.getId());
-        assertThat(orderTrail).extracting(AuditEntry::action).containsExactly("ORDER_APPROVED", "ORDER_DISPATCHED");
-        assertThat(orderTrail).extracting(AuditEntry::actor).containsExactly("admin1", "admin3");
+        assertThat(orderTrail).extracting(AuditEntry::action)
+                .containsExactly("ORDER_SUBMITTED", "ORDER_APPROVED", "ORDER_DISPATCHED");
+        assertThat(orderTrail).extracting(AuditEntry::actor).containsExactly("salesman-a", "admin1", "admin3");
 
         AuditEntry invoiceEntry = audit.forEntity("INVOICE", invoice.getId()).get(0);
         assertThat(invoiceEntry.action()).isEqualTo("INVOICE_RAISED");
@@ -114,9 +115,9 @@ class AuditAcrossWorkflowIntegrationTest {
 
         orderService.reject(order.getId(), "admin1", "Customer over credit limit");
 
-        AuditEntry entry = audit.forEntity("ORDER", order.getId()).get(0);
-        assertThat(entry.action()).isEqualTo("ORDER_REJECTED");
-        assertThat(entry.details()).isEqualTo("Customer over credit limit");
+        List<AuditEntry> trail = audit.forEntity("ORDER", order.getId());
+        assertThat(trail).extracting(AuditEntry::action).containsExactly("ORDER_SUBMITTED", "ORDER_REJECTED");
+        assertThat(trail.get(1).details()).isEqualTo("Customer over credit limit");
     }
 
     @Test
@@ -128,6 +129,8 @@ class AuditAcrossWorkflowIntegrationTest {
 
         assertThatThrownBy(() -> orderService.approve(tooBig.getId(), "admin1")).isInstanceOf(ShortageException.class);
 
-        assertThat(audit.forEntity("ORDER", tooBig.getId())).isEmpty();
+        // Only the submission is logged; the failed approval rolled back together with its audit row.
+        assertThat(audit.forEntity("ORDER", tooBig.getId())).extracting(AuditEntry::action)
+                .containsExactly("ORDER_SUBMITTED");
     }
 }
