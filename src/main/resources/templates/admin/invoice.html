@@ -7,7 +7,14 @@
 <div class="container-xxl">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="h4 m-0" th:text="${invoice.invoiceNumber}">INV/2026-27/0001</h1>
-    <a class="btn btn-outline-primary btn-sm" id="download-pdf" th:href="@{/admin/invoices/{id}/pdf(id=${invoice.id})}">Download PDF</a>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-outline-primary btn-sm" id="download-pdf" th:href="@{/admin/invoices/{id}/pdf(id=${invoice.id})}">Download PDF</a>
+      <!-- Share with the customer: the message carries the totals; attach the downloaded PDF before sending. -->
+      <a class="btn btn-outline-success btn-sm" id="share-whatsapp" th:href="${whatsAppUrl}" target="_blank" rel="noopener"
+         title="Opens WhatsApp with the invoice summary; attach the PDF"><i class="bi bi-whatsapp me-1" aria-hidden="true"></i>WhatsApp</a>
+      <a class="btn btn-outline-secondary btn-sm" id="share-email" th:href="${mailtoUrl}"
+         title="Opens your mail app with the invoice summary; attach the PDF"><i class="bi bi-envelope me-1" aria-hidden="true"></i>Email</a>
+    </div>
     <span th:replace="~{fragments :: statusBadge(${invoice.status})}"></span>
   </div>
   <div class="card p-3 mb-3">

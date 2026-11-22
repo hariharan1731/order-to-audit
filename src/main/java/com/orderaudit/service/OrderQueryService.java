@@ -35,11 +35,17 @@ public class OrderQueryService {
      * One row of an order list.
      * totalPaise is before GST (price x quantity). gstPaise and totalWithGstPaise come from the real invoice once
      * the order is invoiced; before that they are what the invoice WOULD be at today's rates, and gstEstimated() is
-     * true so the screen can say so. products is a short description like "Murukku 200 g" or "Murukku 200 g +1 more".
+     * true so the screen can say so. intraState: true means CGST + SGST (customer in the factory's state), false
+     * means IGST; taken from the invoice once there is one. products is a short description like "Murukku 200 g" or "Murukku 200 g +1 more".
      */
     public record OrderSummary(long id, String customerName, OrderStatus status, Instant createdAt,
                                String salesman, long totalPaise, long packets, long gstPaise,
-                               long totalWithGstPaise, String invoiceNumber, String products) {
+                               long totalWithGstPaise, String invoiceNumber, String products, boolean intraState) {
+
+        /** "CGST + SGST" or "IGST": the tax this order is (or will be) invoiced with. */
+        public String taxName() {
+            return intraState ? "CGST + SGST" : "IGST";
+        }
 
         /** True while no invoice exists yet, so the GST shown is an expectation and not a document. */
         public boolean gstEstimated() {
@@ -70,6 +76,16 @@ public class OrderQueryService {
         public long completed() {
             return dispatched;
         }
+    }
+
+    /**
+     * One customer's line in a salesman's customer-wise sales.
+     * billedPaise: orders that have an invoice (invoiced or dispatched), from the invoice incl. GST.
+     * pendingPaise: orders still waiting (submitted or approved), at today's prices incl. expected GST.
+     * Rejected orders are left out completely.
+     */
+    public record CustomerSales(String customerName, long orders, long packets, long billedPaise,
+                                long pendingPaise) {
     }
 
     /** availableNow and shortage are only filled while the order still waits for approval. */
@@ -169,6 +185,32 @@ public class OrderQueryService {
         return new OrderStats(list.size(), submitted, approved, invoiced, dispatched, rejected);
     }
 
+    /**
+     * Groups order rows by customer: the salesman's customer-wise sales. Works on whatever rows the screen shows,
+     * so the date and status filters apply. Biggest billed customer first, then by name.
+     */
+    public static List<CustomerSales> customerWise(List<OrderSummary> rows) {
+        Map<String, long[]> byCustomer = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (OrderSummary o : rows) {
+            if (o.status() == OrderStatus.REJECTED) {
+                continue;
+            }
+            long[] t = byCustomer.computeIfAbsent(o.customerName(), k -> new long[4]);
+            t[0]++;
+            t[1] += o.packets();
+            if (o.invoiceNumber() != null) {
+                t[2] += o.totalWithGstPaise();
+            } else {
+                t[3] += o.totalWithGstPaise();
+            }
+        }
+        List<CustomerSales> result = new ArrayList<>();
+        byCustomer.forEach((name, t) -> result.add(new CustomerSales(name, t[0], t[1], t[2], t[3])));
+        result.sort(Comparator.comparingLong(CustomerSales::billedPaise).reversed()
+                .thenComparing(CustomerSales::customerName, String.CASE_INSENSITIVE_ORDER));
+        return result;
+    }
+
     private static long count(List<SalesOrder> list, OrderStatus status) {
         return list.stream().filter(o -> o.getStatus() == status).count();
     }
@@ -231,7 +273,8 @@ public class OrderQueryService {
 
             result.add(new OrderSummary(order.getId(), customerName, order.getStatus(), order.getCreatedAt(),
                     order.getSalesman(), total, packets, gst, withGst,
-                    invoice.map(Invoice::getInvoiceNumber).orElse(null), describe(names)));
+                    invoice.map(Invoice::getInvoiceNumber).orElse(null), describe(names),
+                    invoice.map(Invoice::isIntraState).orElse(intra)));
         }
         return result;
     }

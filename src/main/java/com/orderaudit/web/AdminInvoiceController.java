@@ -53,6 +53,8 @@ public class AdminInvoiceController {
         model.addAttribute("invoice", invoice);
         model.addAttribute("lines", invoices.linesOf(id));
         model.addAttribute("creditNote", creditNotes.creditNoteOf(id).orElse(null));
+        model.addAttribute("whatsAppUrl", InvoiceShare.whatsAppUrl(invoice));
+        model.addAttribute("mailtoUrl", InvoiceShare.mailtoUrl(invoice));
         if (invoice.getStatus() == InvoiceStatus.ISSUED) {
             long outstanding = receivables.outstandingOfInvoice(id);
             model.addAttribute("outstanding", outstanding);

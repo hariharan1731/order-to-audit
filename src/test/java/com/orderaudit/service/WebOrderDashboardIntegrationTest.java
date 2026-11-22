@@ -117,6 +117,46 @@ class WebOrderDashboardIntegrationTest {
     }
 
     @Test
+    void theSalesmanSeesHisSalesCustomerWise() throws Exception {
+        String page = body(get("/sales/orders").with(ravi()));
+        String table = page.substring(page.indexOf("id=\"customer-sales\""));
+        // Retailer A: invoiced and dispatched, Rs 7,875 incl. CGST+SGST. Distributor B: waiting, 120 x 50 + 5% IGST.
+        assertThat(table).contains("Retailer A").contains("Rs 7,875.00")
+                .contains("Distributor B").contains("Rs 6,300.00");
+        assertThat(table.indexOf("Retailer A")).isLessThan(table.indexOf("Distributor B"));   // biggest billed first
+
+        List<OrderQueryService.CustomerSales> rows =
+                OrderQueryService.customerWise(queries.search("ravi", null, null, null, null, null));
+        assertThat(rows).extracting(OrderQueryService.CustomerSales::customerName)
+                .containsExactly("Retailer A", "Distributor B");
+        assertThat(rows.get(0).billedPaise()).isEqualTo(787_500);
+        assertThat(rows.get(0).pendingPaise()).isZero();
+        assertThat(rows.get(1).packets()).isEqualTo(120);
+        assertThat(rows.get(1).billedPaise()).isZero();
+        assertThat(rows.get(1).pendingPaise()).isEqualTo(630_000);
+    }
+
+    @Test
+    void theOrderPageNamesTheTaxThatApplies() throws Exception {
+        // Distributor B is in Karnataka (29): inter-state, so IGST, still expected because it is not invoiced.
+        String distributor = body(get("/admin/orders/" + distributorOrder.getId()).with(admin()));
+        String tax = distributor.substring(distributor.indexOf("id=\"tax-name\""));
+        assertThat(tax).startsWith("id=\"tax-name\"><span>IGST</span>").contains("(expected)");
+        // Retailer A is in Tamil Nadu (33) like the factory: CGST + SGST, taken from the real invoice.
+        String retailer = body(get("/admin/orders/" + retailerOrder.getId()).with(admin()));
+        assertThat(retailer).contains("id=\"tax-name\"><span>CGST + SGST</span>");
+        assertThat(body(get("/sales/orders/" + distributorOrder.getId()).with(ravi()))).contains("<span>IGST</span>");
+    }
+
+    @Test
+    void aRejectedOrderIsNotCountedInCustomerWiseSales() {
+        orderService.reject(distributorOrder.getId(), "admin1", "Not enough stock");
+        List<OrderQueryService.CustomerSales> rows =
+                OrderQueryService.customerWise(queries.search("ravi", null, null, null, null, null));
+        assertThat(rows).extracting(OrderQueryService.CustomerSales::customerName).containsExactly("Retailer A");
+    }
+
+    @Test
     void theDeskCardsCountEveryOrderInTheFactory() throws Exception {
         String page = body(get("/admin/orders").with(admin()));
         assertThat(page).contains("id=\"stat-total\">2<").contains("id=\"stat-submitted\">1<")

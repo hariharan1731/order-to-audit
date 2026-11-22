@@ -11,12 +11,14 @@ Status of each requirement from the internship brief, with how it was verified.
 | Mobile-friendly salesman order | Done (layout) | Bootstrap responsive, large tap targets. Not tested on a physical phone |
 | Admin approve / reject | Done | Web order flow tests; shortage blocks approval |
 | GST invoice + PDF | Done | Invoice tests, PDF content test (Rs 7,500 / 187.50 / 187.50 / 7,875), browser PDF download |
+| Share invoice with customer | Done | WhatsApp and Email buttons on the invoice page carry the totals; the PDF is attached by the admin. Tested in `WebOfficeIntegrationTest` |
 | Purchase and supplier management | Done | Purchase screen + supplier form + tests |
 | Raw/packaging inventory, stock ledger | Done | Append-only ledger, item history screen, ledger tests |
-| BOM | Done (view) | Recipe/pack sheet screen; BOM created by seed (no create form) |
+| BOM | Done | Recipes and pack configs are created on `/admin/setup` (the benchmark one comes from the seed); not editable after creation |
 | Production run, auto deduction/addition | Done | Production service + web + browser tests |
 | Planned vs actual, yield, wastage | Done | Run page shows planned vs actual, variance flags, damaged pouches |
-| Customer payments, outstanding | Done | Payment allocation tests, ageing report |
+| Customer payments, outstanding | Done | Payment allocation tests, ageing report; payment reversal (bounced cheque) with race tests |
+| Salesman's customer-wise sales | Done | "My sales by customer" on My orders (billed and waiting per customer). Tested in `WebOrderDashboardIntegrationTest` |
 | Cost per packet and margin | Done | Rs 31.14 and 37.71% asserted in service, report and browser tests |
 | Monthly reports + CSV/Excel/PDF | Done | 12 reports, exports tested (content and format) |
 
