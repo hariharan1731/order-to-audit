@@ -27,6 +27,8 @@
     </table>
   </div>
   <form th:action="@{/admin/payments/customers/{id}(id=${customer.id})}" method="post" class="card p-3" th:unless="${#lists.isEmpty(open)}">
+    <!-- One-time id: if this form is sent twice (double-click, re-send), the payment is recorded once. -->
+    <input type="hidden" name="requestId" th:value="${requestId}">
     <div class="row g-3">
       <div class="col-12 col-md-3"><label class="form-label">Amount (Rs)</label>
         <input type="number" name="amountRupees" class="form-control form-control-lg" min="0.01" step="0.01" required></div>

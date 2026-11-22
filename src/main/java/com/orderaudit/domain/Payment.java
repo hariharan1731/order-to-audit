@@ -37,6 +37,10 @@ public class Payment {
     @Column(name = "received_by", nullable = false)
     private String receivedBy;
 
+    /** One-time id from the payment form; the same id again means the same payment (no duplicate). */
+    @Column(name = "client_request_id")
+    private String clientRequestId;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private Instant createdAt;
 
@@ -53,6 +57,12 @@ public class Payment {
         this.receivedBy = receivedBy;
     }
 
+    public Payment(Long customerId, LocalDate paymentDate, long amountPaise, PaymentMethod method,
+                   String reference, String receivedBy, String clientRequestId) {
+        this(customerId, paymentDate, amountPaise, method, reference, receivedBy);
+        this.clientRequestId = clientRequestId;
+    }
+
     public Long getId() { return id; }
     public Long getCustomerId() { return customerId; }
     public LocalDate getPaymentDate() { return paymentDate; }
@@ -60,5 +70,6 @@ public class Payment {
     public PaymentMethod getMethod() { return method; }
     public String getReference() { return reference; }
     public String getReceivedBy() { return receivedBy; }
+    public String getClientRequestId() { return clientRequestId; }
     public Instant getCreatedAt() { return createdAt; }
 }

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,11 @@ public class ReceivablesService {
     @Transactional
     public Payment recordPayment(long customerId, LocalDate paymentDate, PaymentMethod method, String reference,
                                  String receivedBy, List<AllocationRequest> requested) {
+        return record(customerId, paymentDate, method, reference, receivedBy, requested, null);
+    }
+
+    private Payment record(long customerId, LocalDate paymentDate, PaymentMethod method, String reference,
+                           String receivedBy, List<AllocationRequest> requested, String requestId) {
         if (paymentDate == null || method == null) {
             throw new IllegalArgumentException("Payment date and method are required");
         }
@@ -85,10 +91,23 @@ public class ReceivablesService {
         }
         List<AllocationRequest> ordered = requested.stream()
                 .sorted(Comparator.comparingLong(AllocationRequest::invoiceId)).toList();   // lock in a fixed order
-        long total = 0;
+        List<Invoice> locked = new ArrayList<>();
         for (AllocationRequest a : ordered) {
-            Invoice invoice = invoices.findForUpdate(a.invoiceId()).orElseThrow(
-                    () -> new IllegalArgumentException("Invoice " + a.invoiceId() + " does not exist"));
+            locked.add(invoices.findForUpdate(a.invoiceId()).orElseThrow(
+                    () -> new IllegalArgumentException("Invoice " + a.invoiceId() + " does not exist")));
+        }
+        if (requestId != null) {
+            // Checked again while holding the invoice locks: an identical request that arrived at the same moment
+            // has committed by now, so it is found here instead of being recorded a second time.
+            Optional<Payment> same = payments.findByClientRequestId(requestId);
+            if (same.isPresent()) {
+                return same.get();
+            }
+        }
+        long total = 0;
+        for (int i = 0; i < ordered.size(); i++) {
+            AllocationRequest a = ordered.get(i);
+            Invoice invoice = locked.get(i);
             if (invoice.getCustomerId() != customerId) {
                 throw new IllegalArgumentException("Invoice " + invoice.getInvoiceNumber() + " belongs to another customer");
             }
@@ -103,7 +122,7 @@ public class ReceivablesService {
             total = Math.addExact(total, a.amountPaise());
         }
         Payment payment = payments.save(new Payment(customerId, paymentDate, total, method,
-                reference == null || reference.isBlank() ? null : reference.trim(), receivedBy.trim()));
+                reference == null || reference.isBlank() ? null : reference.trim(), receivedBy.trim(), requestId));
         for (AllocationRequest a : ordered) {
             allocations.save(new PaymentAllocation(payment.getId(), a.invoiceId(), a.amountPaise()));
         }
@@ -180,8 +199,33 @@ public class ReceivablesService {
     @Transactional
     public Payment recordPaymentOldestFirst(long customerId, LocalDate paymentDate, PaymentMethod method,
                                             String reference, String receivedBy, long amountPaise) {
+        return recordPaymentOldestFirst(customerId, paymentDate, method, reference, receivedBy, amountPaise, null);
+    }
+
+    /**
+     * Same as above, but safe to send twice: clientRequestId comes from the payment form, and a second request with
+     * the same id returns the payment already recorded instead of recording the money again (double-click, re-sent
+     * form, browser back + resubmit).
+     */
+    @Transactional
+    public Payment recordPaymentOldestFirst(long customerId, LocalDate paymentDate, PaymentMethod method,
+                                            String reference, String receivedBy, long amountPaise,
+                                            String clientRequestId) {
+        String requestId = clientRequestId == null || clientRequestId.isBlank() ? null : clientRequestId.trim();
+        if (requestId != null) {
+            if (requestId.length() > 60) {
+                throw new IllegalArgumentException("Client request id must be at most 60 characters");
+            }
+            Optional<Payment> existing = payments.findByClientRequestId(requestId);
+            if (existing.isPresent()) {
+                if (existing.get().getCustomerId() != customerId) {
+                    throw new IllegalArgumentException("This payment request was already used for another customer");
+                }
+                return existing.get();
+            }
+        }
         List<AllocationRequest> plan = PaymentAllocator.oldestFirst(amountPaise, openInvoices(customerId));
-        return recordPayment(customerId, paymentDate, method, reference, receivedBy, plan);
+        return record(customerId, paymentDate, method, reference, receivedBy, plan, requestId);
     }
 
     @Transactional(readOnly = true)

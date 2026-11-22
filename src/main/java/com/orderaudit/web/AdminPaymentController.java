@@ -65,6 +65,7 @@ public class AdminPaymentController {
         model.addAttribute("history", receivables.paymentsOf(id));
         model.addAttribute("methods", PaymentMethod.values());
         model.addAttribute("today", ReportPeriod.today());
+        model.addAttribute("requestId", java.util.UUID.randomUUID().toString());   // same id twice = one payment
         return "admin/payment-form";
     }
 
@@ -72,10 +73,11 @@ public class AdminPaymentController {
     public String record(@PathVariable long id, @RequestParam BigDecimal amountRupees,
                          @RequestParam PaymentMethod method, @RequestParam(required = false) String reference,
                          @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate paymentDate,
+                         @RequestParam(required = false) String requestId,
                          Authentication auth, RedirectAttributes redirect) {
         try {
             long paise = Money.ofRupees(amountRupees).paise();
-            receivables.recordPaymentOldestFirst(id, paymentDate, method, reference, auth.getName(), paise);
+            receivables.recordPaymentOldestFirst(id, paymentDate, method, reference, auth.getName(), paise, requestId);
             redirect.addFlashAttribute("message", "Payment recorded and applied to the oldest invoices first.");
         } catch (IllegalArgumentException | IllegalStateException | ArithmeticException e) {
             redirect.addFlashAttribute("error", e.getMessage());

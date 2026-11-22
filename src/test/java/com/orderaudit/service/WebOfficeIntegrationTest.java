@@ -175,6 +175,22 @@ class WebOfficeIntegrationTest {
     }
 
     @Test
+    void sendingTheSamePaymentFormTwiceRecordsItOnce() throws Exception {
+        String form = body(get("/admin/payments/customers/" + retailerA.getId()).with(admin()));
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("name=\"requestId\" value=\"([^\"]+)\"").matcher(form);
+        assertThat(m.find()).as("payment form carries a one-time request id").isTrue();
+        String requestId = m.group(1);
+
+        for (int i = 0; i < 2; i++) {          // double-click / re-sent form
+            assertThat(flashOf(post("/admin/payments/customers/" + retailerA.getId()).with(admin()).with(csrf())
+                    .param("amountRupees", "1000").param("method", "CASH").param("paymentDate", "2026-11-21")
+                    .param("requestId", requestId), "message")).contains("Payment recorded");
+        }
+        assertThat(receivables.paymentsOf(retailerA.getId())).hasSize(1);
+        assertThat(receivables.customerOutstanding(retailerA.getId())).isEqualTo(687_500);   // 7,875 - 1,000 once
+    }
+
+    @Test
     void payingMoreThanIsOwedShowsAMessageAndChangesNothing() throws Exception {
         String error = flashOf(post("/admin/payments/customers/" + retailerA.getId()).with(admin()).with(csrf())
                 .param("amountRupees", "9000").param("method", "CASH").param("paymentDate", "2026-11-21"), "error");
