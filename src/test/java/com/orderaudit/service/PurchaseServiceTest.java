@@ -3,6 +3,7 @@ package com.orderaudit.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
@@ -47,6 +48,7 @@ class PurchaseServiceTest {
     @Mock SupplierRepository suppliers;
     @Mock ItemRepository items;
     @Mock StockService stock;
+    @Mock AuditService audit;
     @InjectMocks PurchaseService service;
 
     private final Supplier supplier = new Supplier("Flour Mill", null, "33", null);
@@ -76,6 +78,7 @@ class PurchaseServiceTest {
         verify(stock).post(1L, MovementType.PURCHASE, 60_000, new BigDecimal("4.5"),
                 SourceType.PURCHASE, 7L, "admin");
         verify(lines).save(any(PurchaseLine.class));
+        verify(audit).record(eq("admin"), eq("PURCHASE_RECORDED"), eq("PURCHASE"), eq(7L), anyString());
     }
 
     @Test

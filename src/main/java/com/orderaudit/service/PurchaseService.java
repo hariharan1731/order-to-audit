@@ -34,14 +34,17 @@ public class PurchaseService {
     private final SupplierRepository suppliers;
     private final ItemRepository items;
     private final StockService stock;
+    private final AuditService audit;
 
     public PurchaseService(PurchaseRepository purchases, PurchaseLineRepository lines,
-                           SupplierRepository suppliers, ItemRepository items, StockService stock) {
+                           SupplierRepository suppliers, ItemRepository items, StockService stock,
+                           AuditService audit) {
         this.purchases = purchases;
         this.lines = lines;
         this.suppliers = suppliers;
         this.items = items;
         this.stock = stock;
+        this.audit = audit;
     }
 
     @Transactional
@@ -93,6 +96,9 @@ public class PurchaseService {
             stock.post(spec.itemId(), MovementType.PURCHASE, spec.quantityBase(), spec.unitCostPaise(),
                     SourceType.PURCHASE, purchase.getId(), postedBy);
         }
+        audit.record(postedBy, "PURCHASE_RECORDED", "PURCHASE", purchase.getId(),
+                ordered.size() + " line(s) from supplier " + supplierId
+                        + (purchase.getReference() == null ? "" : ", bill " + purchase.getReference()));
         return purchase;
     }
 }
