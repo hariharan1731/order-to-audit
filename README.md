@@ -55,10 +55,10 @@ Seeding is done by `DataSeeder` (safe to run twice).
 
 ## Run the tests
 
-Needs Docker running (tests start a throwaway PostgreSQL) and internet the first time (Playwright downloads Chromium).
+Needs Docker running (tests start a throwaway PostgreSQL) and internet the first time (Playwright downloads Chromium and WebKit, and Testcontainers pulls the Playwright Firefox image).
 
 ```bash
-mvn test        # 474 tests (on macOS 27 the Firefox browser case errors, see "Known issue" below)
+mvn test        # Firefox runs in a Playwright Docker image, see "Firefox on macOS 27" below
 ```
 
 ## Layers
@@ -105,7 +105,7 @@ services; repositories only talk to the database.
 | Owner dashboard | owner | KPI cards, sales-per-day chart, money-owed-by-age chart, biggest debtors |
 | Office menu | admin | Invoices, payments, customers, prices, items, recipes and packs, users, audit log |
 
-## Known issue: Firefox browser test fails on macOS 27
+## Firefox on macOS 27: browser test runs Firefox in Docker
 
 `MobileAndCrossBrowserTest.loginAndStockPageWorkInEveryBrowserEngine` runs the same login and stock-page checks in
 Chromium, Firefox and WebKit. On a Mac running **macOS 27.2 (Apple silicon)** the Firefox case errors with
@@ -119,9 +119,13 @@ cases and every other test pass. The test is deliberately **not** skipped or dis
 - **Not the fix:** Playwright 1.65.1 (Firefox 159) was also tried. Firefox 159 no longer hangs but exits immediately
   with `Could not find profile folder.` A different profile location, Firefox's sandbox environment variables and
   other command-line variants made no difference. Chromium and WebKit launch normally in both Playwright versions.
-- **Expected result on macOS 27.2:** `mvn test` reports exactly **1 error** (the Firefox case), after about 3 minutes.
-- **Plan:** run the Firefox case on a Linux CI machine, where Playwright's Firefox is supported. Not yet verified,
-  so treat that as a plan, not a result. Nothing in the project configuration was changed for this issue.
+- **Fix (in place):** the Firefox case now runs Firefox inside Playwright's official Linux image
+  (`mcr.microsoft.com/playwright:v1.52.0-noble`), started by Testcontainers. The test connects with
+  `playwright.firefox().connect(...)`, and the browser reaches the app through `host.testcontainers.internal`.
+  Chromium and WebKit still launch on the host, and every assertion is unchanged. The image tag must match the Playwright
+  version in `pom.xml`. The first run downloads the image (about 2 GB) and needs internet to fetch the matching
+  `playwright` npm package inside it.
+- **Expected result:** `mvn test` passes with 0 errors on macOS 27.2.
 
 ## Known limitations
 

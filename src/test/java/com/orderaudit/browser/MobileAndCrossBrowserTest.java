@@ -5,9 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
-import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import java.time.Duration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -16,6 +16,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -33,7 +35,19 @@ class MobileAndCrossBrowserTest {
 
     @LocalServerPort int port;
 
+    /*
+     * Firefox runs inside Playwright's official Linux image instead of on the host. Playwright's bundled
+     * Firefox never finishes starting on macOS 27.2, while the same build runs normally on Linux.
+     * The image tag must match the Playwright version in pom.xml, because client and server versions must agree.
+     */
+    private static final String PLAYWRIGHT_VERSION = "1.52.0";
+    private static final int BROWSER_SERVER_PORT = 3000;
+
     static Playwright playwright;
+    static GenericContainer<?> firefoxServer;
+
+    /** Host name the browser uses to reach the app: localhost, or the Docker host when the browser is in a container. */
+    private String appHost = "localhost";
 
     @BeforeAll
     static void start() {
@@ -43,18 +57,39 @@ class MobileAndCrossBrowserTest {
     @AfterAll
     static void stop() {
         playwright.close();
+        if (firefoxServer != null) {
+            firefoxServer.stop();
+            firefoxServer = null;
+        }
     }
 
     private String url(String path) {
-        return "http://localhost:" + port + path;
+        return "http://" + appHost + ":" + port + path;
     }
 
-    private BrowserType engine(String name) {
+    private Browser launch(String name) {
         return switch (name) {
-            case "firefox" -> playwright.firefox();
-            case "webkit" -> playwright.webkit();
-            default -> playwright.chromium();
+            case "firefox" -> connectToContainerFirefox();
+            case "webkit" -> playwright.webkit().launch();
+            default -> playwright.chromium().launch();
         };
+    }
+
+    private Browser connectToContainerFirefox() {
+        if (firefoxServer == null) {
+            // Must happen before the container starts, so it can reach this test's server on the host.
+            org.testcontainers.Testcontainers.exposeHostPorts(port);
+            firefoxServer = new GenericContainer<>("mcr.microsoft.com/playwright:v" + PLAYWRIGHT_VERSION + "-noble")
+                    .withCommand("npx", "-y", "playwright@" + PLAYWRIGHT_VERSION, "run-server",
+                            "--port", String.valueOf(BROWSER_SERVER_PORT), "--host", "0.0.0.0")
+                    .withExposedPorts(BROWSER_SERVER_PORT)
+                    .waitingFor(Wait.forLogMessage(".*Listening on.*", 1))
+                    .withStartupTimeout(Duration.ofMinutes(5));
+            firefoxServer.start();
+        }
+        appHost = "host.testcontainers.internal";
+        return playwright.firefox().connect(
+                "ws://" + firefoxServer.getHost() + ":" + firefoxServer.getMappedPort(BROWSER_SERVER_PORT) + "/");
     }
 
     private void login(Page page, String user) {
@@ -126,7 +161,7 @@ class MobileAndCrossBrowserTest {
     @ParameterizedTest
     @ValueSource(strings = {"chromium", "firefox", "webkit"})
     void loginAndStockPageWorkInEveryBrowserEngine(String engineName) {
-        try (Browser browser = engine(engineName).launch();
+        try (Browser browser = launch(engineName);
              BrowserContext context = browser.newContext()) {
             Page page = context.newPage();
             login(page, "prod");
