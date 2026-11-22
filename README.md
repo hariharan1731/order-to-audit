@@ -67,6 +67,17 @@ Seeding is done by `DataSeeder` (safe to run twice).
 5. Put a reverse proxy (nginx / Caddy) in front for HTTPS, and do not expose port 5432 publicly.
 6. Back up the `orderaudit_data` volume (`pg_dump`) regularly.
 
+## Record the demo video
+
+```bash
+demo/record-demo.sh
+```
+
+Plays the whole section 5 scenario in a real browser against a fresh seeded copy of the app (throwaway database on
+port 55432, app on port 8099; both are removed afterwards) and saves a captioned 1280x800 video, about 5 minutes,
+to `target/demo/order-to-audit-benchmark-demo.webm`. Salesman steps are shown in a 390 px phone frame. The video
+has no audio; add a voice-over before uploading if you want one. Script: `demo/BenchmarkDemo.java`.
+
 ## Run the tests
 
 Needs Docker running (tests start a throwaway PostgreSQL) and internet the first time (Playwright downloads Chromium and WebKit, and Testcontainers pulls the Playwright Firefox image).
