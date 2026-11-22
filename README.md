@@ -101,8 +101,12 @@ services; repositories only talk to the database.
 - **Costing:** weighted-average cost (WAC). Yield and material variances use a strict `>` 3% tolerance.
 - **Invoices:** gapless `INV/2026-27/0001` per financial year (Apr–Mar); GST 5% split CGST+SGST in Tamil Nadu,
   IGST for other states. Credit notes `CN/2026-27/0001`.
-- **Audit:** every business action writes an audit row inside the same transaction; a failed action leaves none.
+- **Audit:** every business action (purchase, order submitted/approved/rejected, invoice, dispatch, payment,
+  production run, master-data change) writes an audit row inside the same transaction; a failed action leaves none.
+- **No double entry:** a re-sent order or payment form (double-click, weak network) carries a one-time request id, so
+  it is recorded once; a unique database column backs this up.
 - **Security:** form login, BCrypt passwords, CSRF on, role-based URL rules, deny by default.
+- **Errors:** 403, 404 and other errors show a plain page in the app's style; no stack traces or exception text.
 
 ## Features against the brief's tiers (section 6)
 

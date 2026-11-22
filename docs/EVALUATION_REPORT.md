@@ -18,6 +18,7 @@ Status of each requirement from the internship brief, with how it was verified.
 | Production run, auto deduction/addition | Done | Production service + web + browser tests |
 | Planned vs actual, yield, wastage | Done | Run page shows planned vs actual, variance flags, damaged pouches |
 | Customer payments, outstanding | Done | Payment allocation tests, ageing report; payment reversal (bounced cheque) with race tests |
+| Duplicate payment protection | Done | One-time request id on the payment form + unique column (V13); tested in `ReceivablesIntegrationTest` and `WebOfficeIntegrationTest` |
 | Salesman's customer-wise sales | Done | "My sales by customer" on My orders (billed and waiting per customer). Tested in `WebOrderDashboardIntegrationTest` |
 | Cost per packet and margin | Done | Rs 31.14 and 37.71% asserted in service, report and browser tests |
 | Monthly reports + CSV/Excel/PDF | Done | 12 reports, exports tested (content and format) |
