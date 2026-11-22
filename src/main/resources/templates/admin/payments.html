@@ -44,6 +44,15 @@
       <tfoot><tr><th>Total</th><th></th><th class="text-end money" th:text="${@fmt.rupees(total)}">x</th><th></th></tr></tfoot>
     </table>
   </div>
+
+  <div class="card p-3 mt-3" id="payment-history-links">
+    <h2 class="h6 mb-1">Payment history and reversals</h2>
+    <p class="small text-muted mb-2">Open a customer to see every payment received, or to reverse one (bounced cheque, wrong customer).</p>
+    <div class="d-flex flex-wrap gap-2">
+      <a class="btn btn-sm btn-outline-secondary" th:each="c : ${allCustomers}"
+         th:href="@{/admin/payments/customers/{id}(id=${c.id})}"><i class="bi bi-clock-history me-1" aria-hidden="true"></i><span th:text="${c.name}">Retailer A</span></a>
+    </div>
+  </div>
 </div>
 <th:block th:replace="~{fragments :: scripts}"></th:block>
 </body>

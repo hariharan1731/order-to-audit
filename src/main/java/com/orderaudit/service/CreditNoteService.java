@@ -78,7 +78,7 @@ public class CreditNoteService {
         Long paid = allocations.paidAgainst(invoiceId);
         if (paid != null && paid > 0) {
             throw new IllegalStateException("Invoice " + invoice.getInvoiceNumber() + " has " + paid
-                    + " paise paid against it; refund the payment before issuing a credit note");
+                    + " paise paid against it; refund the payment (reverse it under Payments) before issuing a credit note");
         }
 
         String number = numbers.next(creditDate);

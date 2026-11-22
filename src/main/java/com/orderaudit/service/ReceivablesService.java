@@ -9,12 +9,16 @@ import com.orderaudit.domain.OpenInvoice;
 import com.orderaudit.domain.Payment;
 import com.orderaudit.domain.PaymentAllocation;
 import com.orderaudit.domain.PaymentMethod;
+import com.orderaudit.domain.PaymentReversal;
+import com.orderaudit.domain.PaymentRow;
 import com.orderaudit.repository.CustomerRepository;
 import com.orderaudit.repository.InvoiceRepository;
 import com.orderaudit.repository.PaymentAllocationRepository;
 import com.orderaudit.repository.PaymentRepository;
+import com.orderaudit.repository.PaymentReversalRepository;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,14 +39,17 @@ public class ReceivablesService {
 
     private final PaymentRepository payments;
     private final PaymentAllocationRepository allocations;
+    private final PaymentReversalRepository reversals;
     private final InvoiceRepository invoices;
     private final CustomerRepository customers;
     private final AuditService audit;
 
     public ReceivablesService(PaymentRepository payments, PaymentAllocationRepository allocations,
-                              InvoiceRepository invoices, CustomerRepository customers, AuditService audit) {
+                              PaymentReversalRepository reversals, InvoiceRepository invoices,
+                              CustomerRepository customers, AuditService audit) {
         this.payments = payments;
         this.allocations = allocations;
+        this.reversals = reversals;
         this.invoices = invoices;
         this.customers = customers;
         this.audit = audit;
@@ -103,6 +110,70 @@ public class ReceivablesService {
         audit.record(receivedBy, "PAYMENT_RECORDED", "PAYMENT", payment.getId(),
                 total + " paise by " + method + " for customer " + customerId);
         return payment;
+    }
+
+    /**
+     * Cancel a payment that should never have counted (bounced cheque, wrong customer, keyed twice).
+     * Nothing is edited or deleted: a payment_reversal row is added, so the payment stays in history and the
+     * invoices it paid simply owe that money again. The invoices are locked first (in a fixed order, like
+     * recordPayment), so a reversal cannot interleave with a new payment or a credit note on the same invoice.
+     */
+    @Transactional
+    public PaymentReversal reversePayment(long paymentId, LocalDate reversalDate, String reason, String reversedBy) {
+        if (reversalDate == null) {
+            throw new IllegalArgumentException("Reversal date is required");
+        }
+        if (reason == null || reason.isBlank() || reason.trim().length() > 200) {
+            throw new IllegalArgumentException("A reason is required (at most 200 characters)");
+        }
+        if (reversedBy == null || reversedBy.isBlank()) {
+            throw new IllegalArgumentException("reversedBy is required");
+        }
+        Payment payment = payments.findById(paymentId).orElseThrow(
+                () -> new IllegalArgumentException("Payment " + paymentId + " does not exist"));
+        if (reversalDate.isBefore(payment.getPaymentDate())) {
+            throw new IllegalArgumentException("Reversal date cannot be before the payment date");
+        }
+        List<PaymentAllocation> spread = allocations.findByPaymentId(paymentId).stream()
+                .sorted(Comparator.comparingLong(PaymentAllocation::getInvoiceId)).toList();
+        for (PaymentAllocation a : spread) {
+            invoices.findForUpdate(a.getInvoiceId());   // lock only; the checks below run after we hold the locks
+        }
+        if (reversals.existsByPaymentId(paymentId)) {
+            throw new IllegalStateException("Payment " + paymentId + " has already been reversed");
+        }
+        PaymentReversal reversal = reversals.saveAndFlush(
+                new PaymentReversal(paymentId, reversalDate, reason.trim(), reversedBy.trim()));
+        audit.record(reversedBy, "PAYMENT_REVERSED", "PAYMENT", paymentId,
+                payment.getAmountPaise() + " paise by " + payment.getMethod() + " for customer "
+                        + payment.getCustomerId() + " reversed: " + reason.trim());
+        return reversal;
+    }
+
+    /** Every payment of a customer, oldest first, including reversed ones (marked as such). */
+    @Transactional(readOnly = true)
+    public List<PaymentRow> paymentsOf(long customerId) {
+        List<Payment> all = payments.findByCustomerIdOrderByIdAsc(customerId);
+        Map<Long, PaymentReversal> reversed = new HashMap<>();
+        if (!all.isEmpty()) {
+            for (PaymentReversal r : reversals.findByPaymentIdIn(all.stream().map(Payment::getId).toList())) {
+                reversed.put(r.getPaymentId(), r);
+            }
+        }
+        List<PaymentRow> rows = new ArrayList<>();
+        for (Payment p : all) {
+            List<String> numbers = new ArrayList<>();
+            for (PaymentAllocation a : allocations.findByPaymentId(p.getId())) {
+                invoices.findById(a.getInvoiceId()).ifPresent(i -> numbers.add(i.getInvoiceNumber()));
+            }
+            numbers.sort(Comparator.naturalOrder());
+            PaymentReversal r = reversed.get(p.getId());
+            rows.add(new PaymentRow(p.getId(), p.getPaymentDate(), p.getAmountPaise(), p.getMethod(),
+                    p.getReference(), p.getReceivedBy(), String.join(", ", numbers), r != null,
+                    r == null ? null : r.getReversalDate(), r == null ? null : r.getReason(),
+                    r == null ? null : r.getReversedBy()));
+        }
+        return rows;
     }
 
     /** Record a payment and spread it over the customer's oldest unpaid invoices first. */
