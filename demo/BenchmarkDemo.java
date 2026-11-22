@@ -132,8 +132,8 @@ public class BenchmarkDemo {
         type(page.locator("tr:has-text('Carton') input[name=actual]"), "9");
         type(page.locator("#goodPackets"), "188");
         type(page.locator("#damagedPouches"), "6");
-        caption("Step 8 of 9 · Labour Rs 1,200 and gas/power Rs 600",
-                "Overheads are entered on the run itself, so the run's cost per packet is complete the moment it is posted.");
+        caption("Step 3 of 9 · Overheads go on the same form",
+                "Labour Rs 1,200 and gas/power Rs 600 (brief step 8) are entered with the run; the cost per packet is shown at step 8.");
         type(page.locator("#labour"), "1200");
         type(page.locator("#gasPower"), "600");
         hold(1200);
@@ -141,10 +141,7 @@ public class BenchmarkDemo {
         caption("Steps 2–3 · Run posted: stock moved automatically",
                 "Yield 188 vs 200 = <b>-6%, flagged</b> (tolerance 3%). Oil 10.5 vs 10 L = <b>+5%, flagged</b>. Pouches -3% is not beyond 3%.");
         show(page.locator("#yield"), 3500);
-        show(page.locator("tr:has-text('Oil')").first(), 4000);
-        caption("Step 8 of 9 · Cost per packet",
-                "Materials at weighted-average cost Rs 4,055 + overheads Rs 1,800 = Rs 5,855 ÷ 188 good packets = <b>Rs 31.14</b>; margin 37.71% at Rs 50.");
-        show(page.locator("#cost-per-packet"), 6000);
+        show(page.locator("tr:has-text('Oil')").first(), 5000);
 
         page.navigate(url("/stock"));
         caption("Stock after the run (from the ledger)",
@@ -212,9 +209,10 @@ public class BenchmarkDemo {
         phone.locator("#customer-sales .table-responsive").evaluate("e => e.scrollTo({left: e.scrollWidth, behavior: 'smooth'})");
         hold(3500);
 
-        // Step 6: Distributor B, insufficient stock
-        phoneCaption("Step 6 of 9 · Salesman B: Distributor B, 120 packets",
-                "Distributor B is in Karnataka. (Only one salesman login is seeded, so the same phone plays Salesman B.)");
+        // Step 6: Salesman B, Distributor B, insufficient stock
+        phone = phoneMode("Step 6 of 9 · Salesman B orders for Distributor B",
+                "Suresh, a second salesman, orders 120 packets for Distributor B in Karnataka.");
+        login(phone, "suresh");
         phone.navigate(url("/sales/orders/new"));
         hold(1500);
         phone.selectOption("#customerId", new SelectOption().setLabel("Distributor B"));
@@ -230,6 +228,9 @@ public class BenchmarkDemo {
                 "Only 88 available, so the order is <b>short by 32</b> and Approve is disabled. Reduce to 88 or reject. Karnataka ≠ Tamil Nadu, so an invoice would carry <b>IGST</b>.");
         show(page.getByText(Pattern.compile("short 32")).first(), 4000);
         show(page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Approve")), 4000);
+        caption("Step 6 of 9 · IGST applies if invoiced",
+                "Karnataka (29) is not the factory's state (Tamil Nadu, 33), so the amounts show <b>IGST (expected)</b>, not CGST + SGST.");
+        show(page.locator("#tax-name"), 5000);
 
         // Step 7: payment
         page.navigate(url("/admin/payments"));
@@ -244,6 +245,16 @@ public class BenchmarkDemo {
         page.navigate(url("/admin/payments"));
         caption("Step 7 of 9 · Outstanding", "Retailer A owes Rs 7,875 - 4,000 = <b>Rs 3,875</b>.");
         show(page.locator("tr:has-text('Retailer A')").first(), 4500);
+
+        // Step 8: overheads and cost per packet
+        desktopAs("prod");
+        page.navigate(url("/production/runs/1"));
+        caption("Step 8 of 9 · Labour Rs 1,200 and gas/power Rs 600 on the run",
+                "Entered with the run in step 3 (overheads are charged to the run they were spent on).");
+        show(page.getByText("Gas and power").first(), 4500);
+        caption("Step 8 of 9 · Cost per packet",
+                "Materials at weighted-average cost Rs 4,055 + overheads Rs 1,800 = Rs 5,855 ÷ 188 good packets = <b>Rs 31.14</b>; margin 37.71% at Rs 50.");
+        show(page.locator("#cost-per-packet"), 6500);
 
         // Step 9: reports
         desktopAs("accounts");

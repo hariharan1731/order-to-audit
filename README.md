@@ -35,6 +35,7 @@ Open http://localhost:8080. First start loads the official benchmark data and on
 | Login | Role | Can do |
 |---|---|---|
 | `ravi` | Salesman | Create orders, see own orders |
+| `suresh` | Salesman | A second salesman ("Salesman B" in the benchmark) |
 | `admin` | Admin | Approve, invoice, dispatch, payments, customers, prices, users, audit log |
 | `prod` | Production supervisor | Production runs, purchases, stock |
 | `accounts` | Accountant | Reports, look at stock (read-only) |
@@ -154,7 +155,8 @@ order on a weak network is saved only once (request id), and a payment can be re
 - Stock is held in whole base units (grams, millilitres, pieces, packets), so 10.5 L is stored as 10,500 ml.
 - Cartons are a packaging item consumed by production, not a sales unit; customers order in packets.
 - The 3% variance tolerance is strict: exactly 3% (the pouches, 194 vs 200) is **not** flagged, more than 3% is.
-- Overheads are entered on the run when it is posted (brief step 8 is done as part of steps 2 and 3). To correct a
+- Overheads are entered on the run when it is posted (brief step 8's figures are typed in during step 3; the demo
+  shows the result at step 8). To correct a
   posted run it is reversed and posted again; nothing is edited in place.
 - Opening stock comes from the seed data; Murukku's 50 opening packets have no known cost, so they are left unvalued.
 - An order needs enough available stock to be approved (available = on hand minus approved orders not yet dispatched).
