@@ -7,6 +7,20 @@ trail of a small food manufacturer (benchmark: "Murukku"): **purchase → produc
 **Stack:** Java 21, Spring Boot 4.1.0, PostgreSQL 16, Spring Security, Spring Data JPA, Thymeleaf, Bootstrap 5,
 Maven, Flyway, Docker Compose. Tests: JUnit 5, Testcontainers, MockMvc, Playwright.
 
+**Why this stack:** the hard part of this problem is correct, traceable money and stock, so I chose a strongly typed
+backend (Java + Spring) on a real relational database (PostgreSQL) where constraints, transactions, row locks and
+triggers protect the ledger even if the Java code has a bug. Server-rendered Thymeleaf pages with Bootstrap work on a
+cheap phone and on the office desktop with no separate mobile app to install, and Docker Compose gives the reviewer a
+single command to run everything.
+
+## Submission links
+
+| Item | Link |
+|---|---|
+| Public repository | https://github.com/hariharan1731/order-to-audit |
+| Demo video (section 5 scenario, max 8 min) | _add the unlisted YouTube / Drive link here_ |
+| Live demo | _none; run locally with the single command below_ |
+
 ## Run it (one command)
 
 Needs Docker Desktop.
@@ -78,6 +92,65 @@ services; repositories only talk to the database.
 - **Audit:** every business action writes an audit row inside the same transaction; a failed action leaves none.
 - **Security:** form login, BCrypt passwords, CSRF on, role-based URL rules, deny by default.
 
+## Features against the brief's tiers (section 6)
+
+**Must have**
+| Requirement | Status | Where |
+|---|---|---|
+| Login with at least three roles | Done (5 roles) | Login page; role rules in `SecurityConfig`, tested per role |
+| Product, customer, raw-material and BOM masters | Done | Office menu: Items, Customers, Prices, Recipes and packs (`/admin/setup`) |
+| Mobile-friendly order entry and admin approval | Done | Salesman: New order. Admin: Order desk with live stock check |
+| GST invoice as PDF | Done | Invoice page: Download PDF, plus WhatsApp and Email share buttons |
+| Production run updates raw and finished stock automatically | Done | Production: post a run, one transaction writes every stock movement |
+| Planned vs actual consumption and yield, variance shown | Done | Run page and Production reports |
+| Stock summary and stock ledger | Done | Stock screen, item history, Stock summary and Stock ledger reports |
+| Sales register and stock report, exportable to Excel/CSV | Done | Reports: every report exports to CSV, Excel and PDF |
+
+**Should have**
+| Requirement | Status | Where |
+|---|---|---|
+| Purchases and supplier records | Done | Stock: Record a purchase; Office: Suppliers; Purchase register |
+| Payments, outstanding and ageing | Done | Office: Payments (with reversal); Outstanding receivables with ageing |
+| Cost per packet with overheads | Done | Run page; Cost per packet and margin report |
+| GST summary report | Done | GST summary of outward supplies (B2B/B2C by rate, maps to GSTR-1 and GSTR-3B 3.1(a)) |
+| Variance alerts beyond a tolerance | Done | Flagged on the run page and counted on the owner dashboard (tolerance set per recipe, default 3%) |
+| Owner dashboard | Done | KPI cards, sales-per-day and ageing charts, biggest debtors |
+
+**Stretch goals:** none built yet (offline capture, batch/expiry, low-stock alerts, production planning from orders,
+visit log, Tally export, e-Invoice format, Tamil interface). Two things in that direction do exist: a double-tapped
+order on a weak network is saved only once (request id), and a payment can be reversed without editing history.
+
+## Costing method and overhead rule
+
+- **Valuation: weighted-average cost (WAC).** Each receipt updates the item's average cost from the ledger; an issue
+  is valued at the average at that moment. Chosen because flour from two purchases (Rs 42 and Rs 45) is mixed in the
+  same bin, so batch-exact FIFO would claim a precision the factory floor does not have. The benchmark flour issue is
+  40 kg x Rs 43.125 = Rs 1,725.
+- **Materials are charged at actual use**, not at the BOM standard: 10.5 L of oil and all 194 pouches (6 damaged) are
+  real cost.
+- **Overhead rule: overheads are charged to the run they were spent on.** Labour, gas and power are entered on the
+  production run (any number of lines), added to the run's material cost, and the total is divided by the **good
+  packets only**. Damaged output and over-use therefore raise the cost of the good packets, which is what the owner
+  needs to see. Monthly overheads that cannot be tied to one run (rent, salaries) are not allocated in this version.
+- **Cost per packet** = (materials + overheads) / good packets = Rs 5,855 / 188 = **Rs 31.14**; margin against the
+  Rs 50 list price = **37.71%**. The good packets enter finished stock at that unit cost.
+
+## Assumptions
+
+- The factory is in Tamil Nadu (state code 33). A customer in state 33 gets CGST + SGST, any other state gets IGST.
+- GST 5% on Murukku as the brief says; HSN code and rate are stored per item and copied onto each invoice line.
+- Invoice numbers restart every financial year (April to March): `INV/2026-27/0001`.
+- Stock is held in whole base units (grams, millilitres, pieces, packets), so 10.5 L is stored as 10,500 ml.
+- Cartons are a packaging item consumed by production, not a sales unit; customers order in packets.
+- The 3% variance tolerance is strict: exactly 3% (the pouches, 194 vs 200) is **not** flagged, more than 3% is.
+- Overheads are entered on the run when it is posted (brief step 8 is done as part of steps 2 and 3). To correct a
+  posted run it is reversed and posted again; nothing is edited in place.
+- Opening stock comes from the seed data; Murukku's 50 opening packets have no known cost, so they are left unvalued.
+- An order needs enough available stock to be approved (available = on hand minus approved orders not yet dispatched).
+  The admin can lower the quantity, for example Distributor B to 88, or reject it.
+- Distributor B is in Karnataka (29). GSTINs in the seed data are fictional placeholders; in the GST summary a
+  customer with a GSTIN is B2B and one without is B2C.
+
 ## Official benchmark (verified by tests)
 
 | Check | Result |
@@ -95,10 +168,10 @@ services; repositories only talk to the database.
 | Screen | Who | What it does |
 |---|---|---|
 | Home | everyone | Role dashboard: the few live numbers that role is allowed to see, plus shortcuts |
-| My orders | salesman | Summary cards (total, pending, submitted, approved, completed), search by order number or retailer, status and date filters, sorting, and a data table with products, quantity, amount, GST and status |
+| My orders | salesman | Summary cards (total, pending, submitted, approved, completed), search by order number or retailer, status and date filters, sorting, a data table with products, quantity, amount, GST and status, and **my sales by customer** (billed and waiting, per customer) |
 | New order | salesman | Phone-friendly: customer, list price per product, +/- quantity, one tap to send |
 | Order desk | office | The same cards, search and filters, plus the three work queues (approve, invoice, dispatch) |
-| One order | office | Progress steps, live stock check with shortage warning, line editing, approve/reject, invoice, dispatch, invoice PDF |
+| One order | office | Progress steps, live stock check with shortage warning, line editing, approve/reject, invoice, dispatch, invoice PDF with WhatsApp and Email share |
 | Production | supervisor | Plan from the recipe, actual usage in kg/L, variance flags, cost per packet, reverse a run |
 | Stock | supervisor, accountant | Stock now, item history, record a purchase |
 | Reports | accountant | 12 reports on screen, each exportable to CSV, Excel and PDF |
