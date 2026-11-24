@@ -106,9 +106,9 @@ public class AdminOrderController {
 
     @PostMapping("/{id}/lines/{itemId}")
     public String changeLine(@PathVariable long id, @PathVariable long itemId, @RequestParam long quantity,
-                             @RequestParam BigDecimal priceRupees, RedirectAttributes redirect) {
+                             @RequestParam BigDecimal priceRupees, Authentication auth, RedirectAttributes redirect) {
         try {
-            orderService.changeLine(id, itemId, quantity, Money.ofRupees(priceRupees).paise());
+            orderService.changeLine(id, itemId, quantity, Money.ofRupees(priceRupees).paise(), auth.getName());
             redirect.addFlashAttribute("message", "Line updated.");
         } catch (IllegalArgumentException | IllegalStateException | ArithmeticException e) {
             redirect.addFlashAttribute("error", e.getMessage());

@@ -129,9 +129,20 @@ public class OrderService {
         return result;
     }
 
-    /** Admin edit before approval: change one line's quantity and price. */
+    /** Same as below, for callers with no logged-in user (plain service use): the actor is "system". */
     @Transactional
     public void changeLine(long orderId, long itemId, long newQuantity, long newUnitPricePaise) {
+        changeLine(orderId, itemId, newQuantity, newUnitPricePaise, com.orderaudit.security.CurrentUser.name());
+    }
+
+    /**
+     * Admin edit before approval: change one line's quantity and price.
+     * The line itself is overwritten, so the audit log keeps the ORIGINAL values: who changed it, and from what to what.
+     * Nothing is logged when the values did not actually change.
+     */
+    @Transactional
+    public void changeLine(long orderId, long itemId, long newQuantity, long newUnitPricePaise, String changedBy) {
+        requireUser(changedBy);
         SalesOrder order = lockOrder(orderId);
         order.requireEditable();
         if (newQuantity <= 0) {
@@ -142,7 +153,15 @@ public class OrderService {
         }
         OrderLine line = lines.findByOrderIdAndItemId(orderId, itemId).orElseThrow(
                 () -> new IllegalArgumentException("Item " + itemId + " is not on order " + orderId));
+        long oldQuantity = line.getQuantity();
+        long oldPrice = line.getUnitPricePaise();
         line.change(newQuantity, newUnitPricePaise);
+        if (oldQuantity != newQuantity || oldPrice != newUnitPricePaise) {
+            String name = items.findById(itemId).map(Item::getName).orElse("item " + itemId);
+            audit.record(changedBy, "ORDER_LINE_CHANGED", "ORDER", orderId,
+                    name + ": quantity " + oldQuantity + " -> " + newQuantity
+                            + ", unit price " + oldPrice + " -> " + newUnitPricePaise + " paise");
+        }
     }
 
     /**
