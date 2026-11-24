@@ -46,7 +46,7 @@ public class DashboardService {
                 .sorted((a, b) -> Long.compare(b.total(), a.total())).limit(5).toList();
 
         long flagged = reports.productionYield(period).rows().stream()
-                .filter(r -> "FLAGGED".equals(r.get(6))).count();
+                .filter(r -> "FLAGGED".equals(r.get(6)) && "POSTED".equals(r.get(9))).count();   // a reversed run no longer counts
         long finished = stockQuery.snapshot().stream().filter(r -> r.type() == ItemType.FINISHED)
                 .mapToLong(StockQueryService.StockRow::onHand).sum();
 
