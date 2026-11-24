@@ -5,6 +5,7 @@ import com.orderaudit.domain.Money;
 import com.orderaudit.domain.OrderStatus;
 import com.orderaudit.report.ReportPeriod;
 import com.orderaudit.service.DispatchService;
+import com.orderaudit.service.InsufficientStockException;
 import com.orderaudit.service.InvoiceService;
 import com.orderaudit.service.OrderQueryService;
 import com.orderaudit.service.OrderService;
@@ -134,7 +135,7 @@ public class AdminOrderController {
         try {
             dispatchService.dispatch(id, auth.getName());
             redirect.addFlashAttribute("message", "Order #" + id + " dispatched. Stock has been reduced.");
-        } catch (IllegalArgumentException | IllegalStateException e) {
+        } catch (IllegalArgumentException | IllegalStateException | InsufficientStockException e) {
             redirect.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/orders/" + id;
