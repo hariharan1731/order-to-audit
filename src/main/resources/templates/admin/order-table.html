@@ -40,7 +40,8 @@
           </td>
           <td class="text-end money fw-semibold" th:text="${@fmt.rupees(o.totalWithGstPaise)}">Rs 7,875.00</td>
           <td class="oa-sub-cell" th:text="${@fmt.dateTime(o.createdAt)}">21 Nov 2026, 16:40</td>
-          <td><span th:replace="~{fragments :: statusBadge(${o.status})}"></span></td>
+          <td><span th:replace="~{fragments :: statusBadge(${o.status})}"></span>
+            <span class="badge oa-badge status-CANCELLED ms-1" th:if="${o.returned}"><i class="bi bi-arrow-return-left" aria-hidden="true"></i>Returned</span></td>
           <td class="text-end">
             <a class="btn btn-sm btn-primary" th:href="@{/admin/orders/{id}(id=${o.id})}">
               <i class="bi bi-arrow-right-short"></i>Open</a>

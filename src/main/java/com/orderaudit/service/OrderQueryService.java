@@ -35,12 +35,14 @@ public class OrderQueryService {
      * One row of an order list.
      * totalPaise is before GST (price x quantity). gstPaise and totalWithGstPaise come from the real invoice once
      * the order is invoiced; before that they are what the invoice WOULD be at today's rates, and gstEstimated() is
-     * true so the screen can say so. intraState: true means CGST + SGST (customer in the factory's state), false
+     * true so the screen can say so. returned is true when a credit note cancelled the invoice (the order itself stays
+     * Dispatched, because it was). intraState: true means CGST + SGST (customer in the factory's state), false
      * means IGST; taken from the invoice once there is one. products is a short description like "Murukku 200 g" or "Murukku 200 g +1 more".
      */
     public record OrderSummary(long id, String customerName, OrderStatus status, Instant createdAt,
                                String salesman, long totalPaise, long packets, long gstPaise,
-                               long totalWithGstPaise, String invoiceNumber, String products, boolean intraState) {
+                               long totalWithGstPaise, String invoiceNumber, String products, boolean intraState,
+                               boolean returned) {
 
         /** "CGST + SGST" or "IGST": the tax this order is (or will be) invoiced with. */
         public String taxName() {
@@ -192,8 +194,8 @@ public class OrderQueryService {
     public static List<CustomerSales> customerWise(List<OrderSummary> rows) {
         Map<String, long[]> byCustomer = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (OrderSummary o : rows) {
-            if (o.status() == OrderStatus.REJECTED) {
-                continue;
+            if (o.status() == OrderStatus.REJECTED || o.returned()) {
+                continue;                       // rejected, or the whole invoice was cancelled by a credit note
             }
             long[] t = byCustomer.computeIfAbsent(o.customerName(), k -> new long[4]);
             t[0]++;
@@ -274,7 +276,8 @@ public class OrderQueryService {
             result.add(new OrderSummary(order.getId(), customerName, order.getStatus(), order.getCreatedAt(),
                     order.getSalesman(), total, packets, gst, withGst,
                     invoice.map(Invoice::getInvoiceNumber).orElse(null), describe(names),
-                    invoice.map(Invoice::isIntraState).orElse(intra)));
+                    invoice.map(Invoice::isIntraState).orElse(intra),
+                    invoice.map(i -> i.getStatus() == com.orderaudit.domain.InvoiceStatus.CANCELLED).orElse(false)));
         }
         return result;
     }
