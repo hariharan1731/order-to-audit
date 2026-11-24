@@ -80,6 +80,7 @@ M11 pouch counts are not cross-checked against packets.
 - Credit notes cancel a whole dispatched invoice with no payments; no partial returns.
 - Excel exports write numeric cells via a double at the final write step (display only; calculations are in paise).
 - Bootstrap and Chart.js load from a CDN; the browser needs internet (charts degrade gracefully).
+- GitHub Actions runs every test except the Playwright browser tests (they need real browsers and did not start on the hosted runner); run those locally with `mvn test`.
 - Not load-tested. The browser tests run Chromium, Firefox and WebKit (Safari's engine) at desktop and phone size, but not on a real handset.
 - Offline order entry, FEFO batches and low-stock alerts are not built (stretch goals).
 - GSTINs are fictional placeholders; no integration with the GST portal.
