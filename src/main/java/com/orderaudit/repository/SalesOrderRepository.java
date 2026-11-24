@@ -24,4 +24,7 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
     Optional<SalesOrder> findForUpdate(@Param("id") Long id);
     List<SalesOrder> findByStatusOrderByIdAsc(OrderStatus status);
     List<SalesOrder> findBySalesmanOrderByIdDesc(String salesman);
+
+    /** Orders created from the start (inclusive) to the end (exclusive) of a time range. */
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(java.time.Instant from, java.time.Instant to);
 }

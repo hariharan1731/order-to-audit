@@ -31,12 +31,15 @@
       <span class="oa-stat-value money" id="kpi-outstanding" th:text="${@fmt.rupees(d.outstandingPaise)}">Rs 0.00</span></div>
     <div class="oa-stat is-done"><span class="oa-stat-label"><i class="bi bi-boxes"></i> Finished packets</span>
       <span class="oa-stat-value" id="kpi-stock" th:text="${@fmt.number(d.finishedPackets)}">0</span></div>
+    <div class="oa-stat is-total"><span class="oa-stat-label"><i class="bi bi-calendar-day"></i> Orders today</span>
+      <span class="oa-stat-value" id="kpi-orders-today" th:text="${d.ordersToday}">0</span></div>
     <div class="oa-stat is-submitted"><span class="oa-stat-label"><i class="bi bi-hourglass-split"></i> Orders waiting</span>
       <span class="oa-stat-value" id="kpi-waiting" th:text="${d.ordersWaiting}">0</span></div>
     <div class="oa-stat is-pending"><span class="oa-stat-label"><i class="bi bi-exclamation-triangle"></i> Flagged runs</span>
       <span class="oa-stat-value" id="kpi-flagged" th:text="${d.flaggedRuns}">0</span></div>
     <div class="oa-stat is-approved"><span class="oa-stat-label"><i class="bi bi-cash-coin"></i> Cost per packet</span>
-      <span class="oa-stat-value money" id="kpi-cost" th:text="${d.latestCostPerPacket}">-</span></div>
+      <span class="oa-stat-value money" id="kpi-cost" th:text="${d.latestCostPerPacket}">-</span>
+      <span class="oa-stat-foot" id="kpi-cost-product" th:if="${!#strings.isEmpty(d.latestProduct)}" th:text="'Latest run: ' + ${d.latestProduct}">-</span></div>
     <div class="oa-stat is-done"><span class="oa-stat-label"><i class="bi bi-percent"></i> Latest margin</span>
       <span class="oa-stat-value" id="kpi-margin" th:text="${d.latestMarginPct}">-</span></div>
     <div class="oa-stat is-total"><span class="oa-stat-label"><i class="bi bi-receipt"></i> Sales before GST</span>

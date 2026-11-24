@@ -16,7 +16,7 @@ public class DashboardService {
 
     public record Dashboard(ReportPeriod period, long salesInclGstPaise, long taxableSalesPaise, long outstandingPaise,
                             List<AgeingRow> topDebtors, long ordersWaiting, long flaggedRuns, long finishedPackets,
-                            String latestCostPerPacket, String latestMarginPct,
+                            String latestCostPerPacket, String latestMarginPct, String latestProduct, long ordersToday,
                             List<String> salesDays, List<java.math.BigDecimal> salesAmounts,
                             List<java.math.BigDecimal> ageingAmounts) {
     }
@@ -53,8 +53,10 @@ public class DashboardService {
         ReportTable cost = reports.costPerPacket(period);
         String costText = "-";
         String marginText = "-";
+        String productText = "";
         if (!cost.rows().isEmpty()) {
             List<Object> last = cost.rows().get(cost.rows().size() - 1);
+            productText = last.get(2) + " (" + last.get(0) + ")";   // the numbers below belong to this one run
             if (last.get(8) != null) {
                 costText = "Rs " + String.format(java.util.Locale.ENGLISH, "%,.2f", java.math.BigDecimal.valueOf((Long) last.get(8), 2));
             }
@@ -77,6 +79,7 @@ public class DashboardService {
                 java.math.BigDecimal.valueOf(ageing.stream().mapToLong(AgeingRow::over90).sum(), 2));
         return new Dashboard(period, total, taxable, outstanding, top,
                 orders.ordersWithStatus(OrderStatus.SUBMITTED).size(), flagged, finished, costText, marginText,
+                productText, orders.countCreatedOn(com.orderaudit.report.ReportPeriod.today()),
                 days, amounts, buckets);
     }
 }

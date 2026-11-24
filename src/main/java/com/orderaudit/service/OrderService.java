@@ -200,6 +200,14 @@ public class OrderService {
         return order;
     }
 
+    /** How many orders were placed on a day (Indian time), whatever happened to them since. */
+    @Transactional(readOnly = true)
+    public long countCreatedOn(java.time.LocalDate day) {
+        var zone = com.orderaudit.report.ReportPeriod.ZONE;
+        return orders.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                day.atStartOfDay(zone).toInstant(), day.plusDays(1).atStartOfDay(zone).toInstant());
+    }
+
     @Transactional(readOnly = true)
     public List<SalesOrder> ordersWithStatus(OrderStatus status) {
         return orders.findByStatusOrderByIdAsc(status);
