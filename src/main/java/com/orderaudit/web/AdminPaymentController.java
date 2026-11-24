@@ -43,7 +43,7 @@ public class AdminPaymentController {
     @GetMapping
     public String debtors(Model model) {
         List<Debtor> debtors = new ArrayList<>();
-        for (Customer c : customers.activeList()) {
+        for (Customer c : customers.all()) {
             long owed = receivables.customerOutstanding(c.getId());
             if (owed > 0) {
                 debtors.add(new Debtor(c.getId(), c.getName(), owed));
@@ -51,13 +51,13 @@ public class AdminPaymentController {
         }
         model.addAttribute("debtors", debtors);
         model.addAttribute("total", debtors.stream().mapToLong(Debtor::outstandingPaise).sum());
-        model.addAttribute("allCustomers", customers.activeList());   // so a fully paid customer's payments can still be opened
+        model.addAttribute("allCustomers", customers.all());   // so a fully paid customer's payments can still be opened
         return "admin/payments";
     }
 
     @GetMapping("/customers/{id}")
     public String customer(@PathVariable long id, Model model) {
-        Customer customer = customers.activeList().stream().filter(c -> c.getId() == id).findFirst()
+        Customer customer = customers.all().stream().filter(c -> c.getId() == id).findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown customer"));
         model.addAttribute("customer", customer);
         model.addAttribute("open", receivables.openInvoices(id));

@@ -5,22 +5,51 @@
 <nav th:replace="~{fragments :: nav}"></nav>
 <div th:replace="~{fragments :: messages}"></div>
 <div class="container-xxl">
-  <h1 class="h4 mb-3">Customers</h1>
+  <h1 class="h4 mb-1">Customers</h1>
+  <p class="text-muted small mb-3">Switching a customer off keeps every old invoice and payment, and stops new orders for them. A changed state code applies to invoices raised from now on; invoices already raised are not touched.</p>
   <div class="oa-table-card table-responsive mb-4">
-    <table class="table mb-0">
-      <thead><tr><th>Name</th><th>GSTIN</th><th>State</th><th>Address</th></tr></thead>
-      <tbody><tr th:each="c : ${customers}">
-        <td th:text="${c.name}">Retailer A</td>
-        <td th:text="${c.gstin != null} ? ${c.gstin} : '-'">-</td>
-        <td th:text="${c.stateCode}">33</td>
-        <td th:text="${c.address}">address</td>
-      </tr></tbody>
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Name</th><th>GSTIN</th><th>State</th><th>Address</th><th></th></tr></thead>
+      <tbody th:each="c : ${customers}">
+        <tr th:id="'customer-' + ${c.id}">
+          <td><span th:text="${c.name}">Name</span>
+            <span class="badge oa-badge status-REVERSED ms-1" th:unless="${c.active}">Switched off</span></td>
+          <td th:text="${c.gstin != null} ? ${c.gstin} : '-'">-</td>
+          <td th:text="${c.stateCode}">33</td>
+          <td th:text="${c.address}">address</td>
+          <td class="text-end text-nowrap">
+            <form class="d-inline" method="post" th:action="@{/admin/customers/{id}/active(id=${c.id})}">
+              <input type="hidden" name="active" th:value="${!c.active}">
+              <button class="btn btn-sm btn-outline-secondary" type="submit"
+                      th:text="${c.active} ? 'Switch off' : 'Switch on'">Switch off</button>
+            </form>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="5" class="py-1">
+            <details>
+              <summary class="small text-muted">Edit details</summary>
+              <form method="post" class="row g-2 py-2" th:action="@{/admin/customers/{id}(id=${c.id})}">
+                <div class="col-12 col-md-4"><label class="form-label small">Name</label>
+                  <input name="name" class="form-control form-control-sm" required maxlength="120" th:value="${c.name}"></div>
+                <div class="col-6 col-md-3"><label class="form-label small">GSTIN (optional)</label>
+                  <input name="gstin" class="form-control form-control-sm" maxlength="15" th:value="${c.gstin}"></div>
+                <div class="col-6 col-md-2"><label class="form-label small">State code</label>
+                  <input name="stateCode" class="form-control form-control-sm" required maxlength="2" th:value="${c.stateCode}"></div>
+                <div class="col-12 col-md-3"><label class="form-label small">Address</label>
+                  <input name="address" class="form-control form-control-sm" maxlength="300" th:value="${c.address}"></div>
+                <div class="col-12"><button class="btn btn-sm btn-primary" type="submit">Save changes</button></div>
+              </form>
+            </details>
+          </td>
+        </tr>
+      </tbody>
     </table>
   </div>
   <form th:action="@{/admin/customers}" method="post" class="card p-3">
     <h2 class="h6">Add a customer</h2>
     <div class="row g-2">
-      <div class="col-12 col-md-4"><label class="form-label small">Name</label><input name="name" class="form-control" required maxlength="150"></div>
+      <div class="col-12 col-md-4"><label class="form-label small">Name</label><input name="name" class="form-control" required maxlength="120"></div>
       <div class="col-6 col-md-3"><label class="form-label small">GSTIN (optional)</label><input name="gstin" class="form-control" maxlength="15"></div>
       <div class="col-6 col-md-2"><label class="form-label small">State code</label><input name="stateCode" class="form-control" required maxlength="2" placeholder="33"></div>
       <div class="col-12 col-md-3"><label class="form-label small">Address</label><input name="address" class="form-control" maxlength="300"></div>

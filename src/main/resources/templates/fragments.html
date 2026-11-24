@@ -41,13 +41,14 @@
         <li class="nav-item dropdown" th:if="${nav.admin}">
           <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
              th:classappend="${nav.on('/admin/invoices') or nav.on('/admin/payments') or nav.on('/admin/customers')
-                              or nav.on('/admin/prices') or nav.on('/admin/items') or nav.on('/admin/setup')
+                              or nav.on('/admin/suppliers') or nav.on('/admin/prices') or nav.on('/admin/items') or nav.on('/admin/setup')
                               or nav.on('/users') or nav.on('/audit')} ? 'active'">
             <i class="bi bi-briefcase"></i> Office</a>
           <ul class="dropdown-menu">
             <li><a class="dropdown-item" th:classappend="${nav.on('/admin/invoices')} ? 'active'" th:attr="aria-current=${nav.on('/admin/invoices')} ? 'page' : null" th:href="@{/admin/invoices}"><i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Invoices</a></li>
             <li><a class="dropdown-item" th:classappend="${nav.on('/admin/payments')} ? 'active'" th:attr="aria-current=${nav.on('/admin/payments')} ? 'page' : null" th:href="@{/admin/payments}"><i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Payments</a></li>
             <li><a class="dropdown-item" th:classappend="${nav.on('/admin/customers')} ? 'active'" th:attr="aria-current=${nav.on('/admin/customers')} ? 'page' : null" th:href="@{/admin/customers}"><i class="bi bi-people me-1" aria-hidden="true"></i>Customers</a></li>
+            <li><a class="dropdown-item" th:classappend="${nav.on('/admin/suppliers')} ? 'active'" th:attr="aria-current=${nav.on('/admin/suppliers')} ? 'page' : null" th:href="@{/admin/suppliers}"><i class="bi bi-truck me-1" aria-hidden="true"></i>Suppliers</a></li>
             <li><a class="dropdown-item" th:classappend="${nav.on('/admin/prices')} ? 'active'" th:attr="aria-current=${nav.on('/admin/prices')} ? 'page' : null" th:href="@{/admin/prices}"><i class="bi bi-tags me-1" aria-hidden="true"></i>Prices</a></li>
             <li><a class="dropdown-item" th:classappend="${nav.on('/admin/items')} ? 'active'" th:attr="aria-current=${nav.on('/admin/items')} ? 'page' : null" th:href="@{/admin/items}"><i class="bi bi-box-seam me-1" aria-hidden="true"></i>Items</a></li>
             <li><a class="dropdown-item" th:classappend="${nav.on('/admin/setup')} ? 'active'" th:attr="aria-current=${nav.on('/admin/setup')} ? 'page' : null" th:href="@{/admin/setup}"><i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>Recipes and packs</a></li>

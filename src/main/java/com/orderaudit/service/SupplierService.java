@@ -41,4 +41,66 @@ public class SupplierService {
     public List<Supplier> activeList() {
         return repository.findByActiveTrueOrderByNameAsc();
     }
+
+    /** Every supplier, active or not, by name: for pages that must still show a supplier who was switched off. */
+    @Transactional(readOnly = true)
+    public List<Supplier> all() {
+        return repository.findAllByOrderByNameAsc();
+    }
+
+    /**
+     * Corrects a supplier's details. Past invoices keep the details they were raised with; the new state code
+     * is used from the next invoice. Nothing is audited when nothing changed.
+     */
+    @Transactional
+    public Supplier update(long id, String name, String gstin, String stateCode, String address) {
+        Supplier party = repository.findById(id).orElseThrow(
+                () -> new IllegalArgumentException("Supplier " + id + " does not exist"));
+        String cleanName = PartyValidation.cleanName(name);
+        String cleanState = PartyValidation.cleanStateCode(stateCode);
+        String cleanGstin = PartyValidation.cleanGstin(gstin, cleanState);
+        String cleanAddress = PartyValidation.cleanAddress(address);
+
+        if (repository.existsByNameIgnoreCaseAndIdNot(cleanName, id)) {
+            throw new DuplicatePartyException("Supplier name", cleanName);
+        }
+        if (cleanGstin != null && repository.existsByGstinAndIdNot(cleanGstin, id)) {
+            throw new DuplicatePartyException("GSTIN", cleanGstin);
+        }
+        java.util.List<String> changes = new java.util.ArrayList<>();
+        if (!party.getName().equals(cleanName)) {
+            changes.add("name: " + party.getName() + " -> " + cleanName);
+        }
+        if (!java.util.Objects.equals(party.getGstin(), cleanGstin)) {
+            changes.add("GSTIN: " + party.getGstin() + " -> " + cleanGstin);
+        }
+        if (!party.getStateCode().equals(cleanState)) {
+            changes.add("state: " + party.getStateCode() + " -> " + cleanState);
+        }
+        if (!java.util.Objects.equals(party.getAddress(), cleanAddress)) {
+            changes.add("address changed");
+        }
+        if (changes.isEmpty()) {
+            return party;
+        }
+        party.update(cleanName, cleanGstin, cleanState, cleanAddress);
+        repository.save(party);
+        audit.record(com.orderaudit.security.CurrentUser.name(), "SUPPLIER_UPDATED", "SUPPLIER", id,
+                String.join("; ", changes));
+        return party;
+    }
+
+    /** Switches a supplier off or on. Switching off keeps every old record and only stops new use. */
+    @Transactional
+    public void setActive(long id, boolean active) {
+        Supplier party = repository.findById(id).orElseThrow(
+                () -> new IllegalArgumentException("Supplier " + id + " does not exist"));
+        if (party.isActive() == active) {
+            return;
+        }
+        party.setActive(active);
+        repository.save(party);
+        audit.record(com.orderaudit.security.CurrentUser.name(),
+                active ? "SUPPLIER_ACTIVATED" : "SUPPLIER_DEACTIVATED", "SUPPLIER", id, party.getName());
+    }
 }

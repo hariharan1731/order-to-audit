@@ -48,7 +48,7 @@ public class AdminMasterController {
 
     @GetMapping("/customers")
     public String customerList(Model model) {
-        model.addAttribute("customers", customers.activeList());
+        model.addAttribute("customers", customers.all());
         return "admin/customers";
     }
 
@@ -60,6 +60,31 @@ public class AdminMasterController {
             customers.create(name, gstin, stateCode, address);
             redirect.addFlashAttribute("message", "Customer added.");
         } catch (DuplicatePartyException | IllegalArgumentException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/customers";
+    }
+
+    @PostMapping("/customers/{id}")
+    public String updateCustomer(@PathVariable long id, @RequestParam String name,
+                                 @RequestParam(required = false) String gstin, @RequestParam String stateCode,
+                                 @RequestParam(required = false) String address, RedirectAttributes redirect) {
+        try {
+            customers.update(id, name, gstin, stateCode, address);
+            redirect.addFlashAttribute("message", "Customer saved.");
+        } catch (DuplicatePartyException | IllegalArgumentException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/customers";
+    }
+
+    @PostMapping("/customers/{id}/active")
+    public String setCustomerActive(@PathVariable long id, @RequestParam boolean active,
+                                    RedirectAttributes redirect) {
+        try {
+            customers.setActive(id, active);
+            redirect.addFlashAttribute("message", active ? "Customer switched on." : "Customer switched off. Old invoices and payments are untouched.");
+        } catch (IllegalArgumentException e) {
             redirect.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/customers";
@@ -77,7 +102,7 @@ public class AdminMasterController {
         model.addAttribute("products", items.activeItemsOfType(ItemType.FINISHED));
         List<SpecialRow> specials = new ArrayList<>();
         for (var cp : customerPrices.findAll()) {
-            String customer = customerList.stream().filter(c -> c.getId().equals(cp.getCustomerId()))
+            String customer = customers.all().stream().filter(c -> c.getId().equals(cp.getCustomerId()))
                     .map(c -> c.getName()).findFirst().orElse("?");
             String item = items.activeItemsOfType(ItemType.FINISHED).stream()
                     .filter(i -> i.getId().equals(cp.getItemId())).map(Item::getName).findFirst().orElse("?");

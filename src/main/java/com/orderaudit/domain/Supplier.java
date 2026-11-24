@@ -41,6 +41,18 @@ public class Supplier {
         this.address = address;
     }
 
+    /** Changes the details. Past invoices keep their own copy of the customer or supplier details. */
+    public void update(String name, String gstin, String stateCode, String address) {
+        this.name = name;
+        this.gstin = gstin;
+        this.stateCode = stateCode;
+        this.address = address;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getGstin() { return gstin; }

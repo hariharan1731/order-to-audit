@@ -9,6 +9,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     boolean existsByNameIgnoreCase(String name);
 
     boolean existsByGstin(String gstin);
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+    boolean existsByGstinAndIdNot(String gstin, Long id);
+    List<Customer> findAllByOrderByNameAsc();
 
     List<Customer> findByActiveTrueOrderByNameAsc();
 }

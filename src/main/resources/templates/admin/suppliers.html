@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Suppliers')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container-xxl">
+  <h1 class="h4 mb-1">Suppliers</h1>
+  <p class="text-muted small mb-3">Switching a supplier off keeps every old purchase, and stops new purchases from them.</p>
+  <div class="oa-table-card table-responsive mb-4">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>Name</th><th>GSTIN</th><th>State</th><th>Address</th><th></th></tr></thead>
+      <tbody th:each="c : ${suppliers}">
+        <tr th:id="'supplier-' + ${c.id}">
+          <td><span th:text="${c.name}">Name</span>
+            <span class="badge oa-badge status-REVERSED ms-1" th:unless="${c.active}">Switched off</span></td>
+          <td th:text="${c.gstin != null} ? ${c.gstin} : '-'">-</td>
+          <td th:text="${c.stateCode}">33</td>
+          <td th:text="${c.address}">address</td>
+          <td class="text-end text-nowrap">
+            <form class="d-inline" method="post" th:action="@{/admin/suppliers/{id}/active(id=${c.id})}">
+              <input type="hidden" name="active" th:value="${!c.active}">
+              <button class="btn btn-sm btn-outline-secondary" type="submit"
+                      th:text="${c.active} ? 'Switch off' : 'Switch on'">Switch off</button>
+            </form>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="5" class="py-1">
+            <details>
+              <summary class="small text-muted">Edit details</summary>
+              <form method="post" class="row g-2 py-2" th:action="@{/admin/suppliers/{id}(id=${c.id})}">
+                <div class="col-12 col-md-4"><label class="form-label small">Name</label>
+                  <input name="name" class="form-control form-control-sm" required maxlength="120" th:value="${c.name}"></div>
+                <div class="col-6 col-md-3"><label class="form-label small">GSTIN (optional)</label>
+                  <input name="gstin" class="form-control form-control-sm" maxlength="15" th:value="${c.gstin}"></div>
+                <div class="col-6 col-md-2"><label class="form-label small">State code</label>
+                  <input name="stateCode" class="form-control form-control-sm" required maxlength="2" th:value="${c.stateCode}"></div>
+                <div class="col-12 col-md-3"><label class="form-label small">Address</label>
+                  <input name="address" class="form-control form-control-sm" maxlength="300" th:value="${c.address}"></div>
+                <div class="col-12"><button class="btn btn-sm btn-primary" type="submit">Save changes</button></div>
+              </form>
+            </details>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <form th:action="@{/admin/suppliers}" method="post" class="card p-3">
+    <h2 class="h6">Add a supplier</h2>
+    <div class="row g-2">
+      <div class="col-12 col-md-4"><label class="form-label small">Name</label><input name="name" class="form-control" required maxlength="120"></div>
+      <div class="col-6 col-md-3"><label class="form-label small">GSTIN (optional)</label><input name="gstin" class="form-control" maxlength="15"></div>
+      <div class="col-6 col-md-2"><label class="form-label small">State code</label><input name="stateCode" class="form-control" required maxlength="2" placeholder="33"></div>
+      <div class="col-12 col-md-3"><label class="form-label small">Address</label><input name="address" class="form-control" maxlength="300"></div>
+    </div>
+    <button class="btn btn-primary mt-3 align-self-start" type="submit">Add supplier</button>
+  </form>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

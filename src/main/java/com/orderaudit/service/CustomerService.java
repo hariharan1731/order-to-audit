@@ -41,4 +41,66 @@ public class CustomerService {
     public List<Customer> activeList() {
         return repository.findByActiveTrueOrderByNameAsc();
     }
+
+    /** Every customer, active or not, by name: for pages that must still show a customer who was switched off. */
+    @Transactional(readOnly = true)
+    public List<Customer> all() {
+        return repository.findAllByOrderByNameAsc();
+    }
+
+    /**
+     * Corrects a customer's details. Past invoices keep the details they were raised with; the new state code
+     * is used from the next invoice. Nothing is audited when nothing changed.
+     */
+    @Transactional
+    public Customer update(long id, String name, String gstin, String stateCode, String address) {
+        Customer party = repository.findById(id).orElseThrow(
+                () -> new IllegalArgumentException("Customer " + id + " does not exist"));
+        String cleanName = PartyValidation.cleanName(name);
+        String cleanState = PartyValidation.cleanStateCode(stateCode);
+        String cleanGstin = PartyValidation.cleanGstin(gstin, cleanState);
+        String cleanAddress = PartyValidation.cleanAddress(address);
+
+        if (repository.existsByNameIgnoreCaseAndIdNot(cleanName, id)) {
+            throw new DuplicatePartyException("Customer name", cleanName);
+        }
+        if (cleanGstin != null && repository.existsByGstinAndIdNot(cleanGstin, id)) {
+            throw new DuplicatePartyException("GSTIN", cleanGstin);
+        }
+        java.util.List<String> changes = new java.util.ArrayList<>();
+        if (!party.getName().equals(cleanName)) {
+            changes.add("name: " + party.getName() + " -> " + cleanName);
+        }
+        if (!java.util.Objects.equals(party.getGstin(), cleanGstin)) {
+            changes.add("GSTIN: " + party.getGstin() + " -> " + cleanGstin);
+        }
+        if (!party.getStateCode().equals(cleanState)) {
+            changes.add("state: " + party.getStateCode() + " -> " + cleanState);
+        }
+        if (!java.util.Objects.equals(party.getAddress(), cleanAddress)) {
+            changes.add("address changed");
+        }
+        if (changes.isEmpty()) {
+            return party;
+        }
+        party.update(cleanName, cleanGstin, cleanState, cleanAddress);
+        repository.save(party);
+        audit.record(com.orderaudit.security.CurrentUser.name(), "CUSTOMER_UPDATED", "CUSTOMER", id,
+                String.join("; ", changes));
+        return party;
+    }
+
+    /** Switches a customer off or on. Switching off keeps every old record and only stops new use. */
+    @Transactional
+    public void setActive(long id, boolean active) {
+        Customer party = repository.findById(id).orElseThrow(
+                () -> new IllegalArgumentException("Customer " + id + " does not exist"));
+        if (party.isActive() == active) {
+            return;
+        }
+        party.setActive(active);
+        repository.save(party);
+        audit.record(com.orderaudit.security.CurrentUser.name(),
+                active ? "CUSTOMER_ACTIVATED" : "CUSTOMER_DEACTIVATED", "CUSTOMER", id, party.getName());
+    }
 }
