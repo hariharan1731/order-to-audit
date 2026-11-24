@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Adjust stock')}"></head>
+<body>
+<nav th:replace="~{fragments :: nav}"></nav>
+<div th:replace="~{fragments :: messages}"></div>
+<div class="container-xxl">
+  <div class="oa-page-head">
+    <div>
+      <h1>Opening stock and corrections</h1>
+      <div class="oa-sub">Nothing is edited or deleted: every change is a new line in the stock ledger and the audit log, with your reason.</div>
+    </div>
+  </div>
+  <form class="card p-3 mb-4" method="post" th:action="@{/stock/adjustments}">
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label" for="itemId">Item</label>
+        <select class="form-select" id="itemId" name="itemId" required>
+          <option th:each="c : ${choices}" th:value="${c.id}" th:text="${c.name} + ' (' + ${c.unit} + ')'">Flour (kg)</option>
+        </select></div>
+      <div class="col-md-3"><label class="form-label" for="action">What happened</label>
+        <select class="form-select" id="action" name="action" required>
+          <option value="OPENING">Opening stock (first balance)</option>
+          <option value="ADD">Add: found or recounted up</option>
+          <option value="REMOVE">Remove: damaged, wasted or lost</option>
+        </select></div>
+      <div class="col-md-2"><label class="form-label" for="quantity">Quantity</label>
+        <input class="form-control" id="quantity" name="quantity" required></div>
+      <div class="col-md-3"><label class="form-label" for="rate">Rate (Rs per same unit, optional)</label>
+        <input class="form-control" id="rate" name="rate"></div>
+      <div class="col-12"><label class="form-label" for="reason">Reason (required)</label>
+        <input class="form-control" id="reason" name="reason" maxlength="300" required></div>
+    </div>
+    <div class="mt-3"><button class="btn btn-primary" id="save-adjustment" type="submit">Save</button>
+      <a class="btn btn-outline-secondary ms-2" th:href="@{/stock}">Cancel</a></div>
+  </form>
+</div>
+<th:block th:replace="~{fragments :: scripts}"></th:block>
+</body>
+</html>

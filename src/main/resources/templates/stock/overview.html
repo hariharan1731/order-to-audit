@@ -10,7 +10,10 @@
       <h1>Stock now</h1>
       <div class="oa-sub">Live balance of every item, worked out from the stock ledger. Open History for every movement.</div>
     </div>
+    <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" id="adjust-stock" th:href="@{/stock/adjustments/new}"><i class="bi bi-sliders me-1" aria-hidden="true"></i>Opening / correction</a>
     <a class="btn btn-outline-primary" id="record-purchase" th:href="@{/stock/purchases/new}"><i class="bi bi-truck me-1" aria-hidden="true"></i>Record purchase</a>
+    </div>
   </div>
 
   <!-- Summary of the same rows shown in the table below (no extra data). -->
