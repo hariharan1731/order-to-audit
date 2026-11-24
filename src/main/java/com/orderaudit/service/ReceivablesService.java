@@ -273,7 +273,7 @@ public class ReceivablesService {
     @Transactional(readOnly = true)
     public List<AgeingRow> ageing(LocalDate asOf) {
         Map<Long, Long> paid = new HashMap<>();
-        for (Object[] row : allocations.paidPerInvoice()) {
+        for (Object[] row : allocations.paidPerInvoiceAsOf(asOf)) {   // the books as they stood on that date
             paid.put((Long) row[0], (Long) row[1]);
         }
         Map<Long, long[]> perCustomer = new LinkedHashMap<>();   // customerId -> {b0, b1, b2, b3}

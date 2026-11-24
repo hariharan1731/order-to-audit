@@ -20,4 +20,15 @@ public interface PaymentAllocationRepository extends JpaRepository<PaymentAlloca
             + "where not exists (select 1 from PaymentReversal r where r.paymentId = a.paymentId) "
             + "group by a.invoiceId")
     List<Object[]> paidPerInvoice();
+
+    /**
+     * Like paidPerInvoice, but as the books stood on a past date: only payments received by then count, and a
+     * reversal only cancels a payment from the day it was made.
+     */
+    @Query("select a.invoiceId, sum(a.amountPaise) from PaymentAllocation a, Payment p "
+            + "where p.id = a.paymentId and p.paymentDate <= :asOf "
+            + "and not exists (select 1 from PaymentReversal r where r.paymentId = a.paymentId "
+            + "and r.reversalDate <= :asOf) "
+            + "group by a.invoiceId")
+    List<Object[]> paidPerInvoiceAsOf(@Param("asOf") java.time.LocalDate asOf);
 }
