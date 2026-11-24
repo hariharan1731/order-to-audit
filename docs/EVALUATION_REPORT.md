@@ -48,10 +48,35 @@ form button. Tables scroll inside their card on a phone instead of breaking the 
 A smoke test (`WebNavigationSmokeIntegrationTest`) opens every screen, every one of the twelve reports and every
 link in the menu with real data behind it and insists on HTTP 200, so a broken page cannot reach the demo.
 
+## Audit follow-up: what was found and fixed after review
+A self-review of the finished system produced a prioritised list. Every item below was fixed with new tests, and the
+official benchmark values were never changed to make a test pass. The suite now has 583 tests, all passing.
+
+| Item | Problem found | Fix |
+|---|---|---|
+| C1 | Two people acting on the same order at the same moment could both succeed | Order rows locked while a status changes (`findForUpdate`); race tests with real threads |
+| C2 | An admin could take over the business by creating or resetting an owner | Only an owner may create an owner, reset an owner's password or enable/disable an owner; the last active owner can never be disabled |
+| H1 | A bounced cheque could not be undone | Payment reversal: a new append-only `payment_reversal` row, the invoice owes the money again, both rows stay in history |
+| H2 | Changing an order line left no record of what changed | `ORDER_LINE_CHANGED` audit row with old and new quantity and price |
+| H3 | Stock adjustments and sign-ins were not audited | Opening stock, corrections, good and failed sign-ins all go to the audit log (passwords never logged) |
+| H5 | Opening stock and corrections had no screen | Stock screen with reason required, exact kg/L conversion, role checks |
+| H6 | Impossible dates were accepted | No future payment, reversal, purchase or run dates; a payment cannot be dated before its invoice |
+| M1 | Dashboard counted reversed runs as flagged | Only posted runs count |
+| M2 | Ageing "as of" a past date used later payments | Only payments and reversals up to that date count |
+| M3 | Dashboard cost and margin did not say which run they came from | The run is named; "Orders today" added |
+| M4 | Dispatching after stock disappeared crashed to an error page | Normal message on the order page |
+| M5 | A disabled user kept their session; unlimited password guesses | Signed out on the next click; 5 wrong passwords lock a username for 15 minutes |
+| M6 | Customers and suppliers could not be corrected or switched off | Edit and switch off/on screens, audited; old invoices keep their original details |
+| M9 | Credit notes were hidden inside the GST sales rows | Separate "credit notes" rows; the total is still the net figure |
+
+Still open (low impact): M7 overheads can only be entered when a run is created; M8 a returned order still shows
+"Dispatched" (its invoice shows Cancelled); M10 the invoice PDF's seller state text is fixed at Tamil Nadu (33);
+M11 pouch counts are not cross-checked against packets.
+
 ## Known limitations (honest list)
 - Recipes and pack configurations can be created from the screen but not edited afterwards.
 - Items: tax details can be changed and an item can be switched off, but names, types and units are fixed.
-- Opening stock is seeded, not entered from a screen.
+- Opening stock and manual corrections are entered from the Stock screen ("Opening / correction"), always with a reason; there is no separate "issue raw material" action (production runs issue raw material, and write-offs use a correction).
 - Credit notes cancel a whole dispatched invoice with no payments; no partial returns.
 - Excel exports write numeric cells via a double at the final write step (display only; calculations are in paise).
 - Bootstrap and Chart.js load from a CDN; the browser needs internet (charts degrade gracefully).

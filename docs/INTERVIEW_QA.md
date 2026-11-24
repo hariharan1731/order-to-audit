@@ -31,3 +31,24 @@
 **What would you build next?** Offline order entry for salesmen, FEFO batch tracking, low-stock alerts, partial credit notes, screens for items/recipes.
 
 **What are the limits of your tests?** They prove the official benchmark and the rules; they don't cover load, real GST filing formats, or mobile browsers.
+
+## After the self-review (what we fixed and why)
+
+**Two people click Approve on the same order at once. What happens?** The order row is locked (`SELECT ... FOR UPDATE`) while its status changes, so the second person waits, then sees the new status and is refused. A test with real threads proves it.
+
+**How do you undo a payment that bounced?** You never edit or delete it. A new `payment_reversal` row points at the payment (one reversal per payment, enforced by a UNIQUE constraint). Outstanding is worked out as invoice total minus payments that have no reversal, so the invoice simply owes the money again and the history keeps both rows.
+
+**Why can a payment not be dated tomorrow?** A future date would put money in a report before it exists. The service refuses future payment, reversal, purchase and production dates, and a payment dated before its invoice. Invoice dates are not limited, because the financial-year numbering test deliberately raises invoices dated in the next year.
+
+**Ageing "as of" last month: why did it need fixing?** It subtracted every payment ever made, including ones received after that date. Now a payment counts from the day it was received, and a reversal only cancels it from the day it was made, so an old report always shows the books as they stood then.
+
+**How do you stop password guessing?** After 5 wrong passwords for a username within 15 minutes, that username is locked for 15 minutes, even for the right password. The count is kept in memory, resets on a good sign-in, and the screen says the same "wrong username or password" so an attacker cannot tell the lock is on. The audit log records "account is locked".
+
+**A user is disabled while logged in: do they stay in?** No. A filter checks the account on every request and signs out a disabled user on their next click.
+
+**You can edit a customer's state. Does that change old invoices?** No. An invoice stores its own copy of the customer name, GSTIN and state when it is raised, so editing the customer only affects invoices raised from then on. Switching a customer off keeps all history and only stops new orders.
+
+**Why do credit notes have their own rows in the GST summary?** Netting them into the B2B and B2C rows made the sales rows look smaller than what was invoiced. GSTR-1 lists credit notes separately, so the report does too; the TOTAL row is still the net figure for GSTR-3B.
+
+**A test failed because of a flush. What was that?** The reports read with plain SQL, but inside one test transaction JPA had not yet written the change. The fix was in the test (flush first), not the app, because in the real app each request is its own transaction.
+

@@ -1,0 +1,37 @@
+name: tests
+
+# Runs the whole test suite (unit, integration with a throwaway PostgreSQL, and the browser tests)
+# on every push to main and on every pull request.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      # The browser tests need a few system libraries; Docker (for the PostgreSQL container) is already on the runner.
+      - name: Install browser system libraries
+        continue-on-error: true
+        run: mvn -B -q compile exec:java -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.args="install-deps"
+
+      - name: Run tests
+        run: mvn -B test
+
+      - name: Keep the test reports if something failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports
