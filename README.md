@@ -1,5 +1,7 @@
 # Order-to-Audit System
 
+[![tests](https://github.com/hariharan1731/order-to-audit/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/hariharan1731/order-to-audit/actions/workflows/tests.yml)
+
 An individual internship project for NIT Tiruchirappalli (Centre for Digital Infrastructure). It runs the whole
 trail of a small food manufacturer (benchmark: "Murukku"): **purchase → production → order → approval → invoice
 → dispatch → payment → reports → audit log**.
