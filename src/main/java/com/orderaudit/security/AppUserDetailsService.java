@@ -14,9 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class AppUserDetailsService implements UserDetailsService {
 
     private final AppUserRepository users;
+    private final LoginThrottle throttle;
 
-    public AppUserDetailsService(AppUserRepository users) {
+    public AppUserDetailsService(AppUserRepository users, LoginThrottle throttle) {
         this.users = users;
+        this.throttle = throttle;
     }
 
     @Override
@@ -28,6 +30,7 @@ public class AppUserDetailsService implements UserDetailsService {
                 .password(user.getPasswordHash())
                 .roles(user.getRole().name())          // becomes the authority ROLE_<NAME>
                 .disabled(!user.isEnabled())
+                .accountLocked(throttle.isLocked(user.getUsername()))   // too many wrong passwords recently
                 .build();
     }
 }

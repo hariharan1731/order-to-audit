@@ -31,8 +31,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain webSecurity(HttpSecurity http) throws Exception {
+    SecurityFilterChain webSecurity(HttpSecurity http, com.orderaudit.repository.AppUserRepository users)
+            throws Exception {
         http
+            .addFilterAfter(new ActiveUserFilter(users),
+                    org.springframework.security.web.context.SecurityContextHolderFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/error", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 .requestMatchers("/sales/**").hasAnyRole("SALESMAN", "ADMIN", "OWNER")
