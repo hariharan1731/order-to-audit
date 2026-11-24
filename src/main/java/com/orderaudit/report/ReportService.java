@@ -59,11 +59,13 @@ public class ReportService {
     /** The same idea at line level (for product-wise sales and the GST summary by rate). */
     private static final String SALES_LINES =
             "SELECT i.invoice_date AS doc_date, i.customer_gstin, l.item_id, l.item_name, l.hsn_code, l.quantity, "
-                    + "l.gst_rate_percent, l.taxable_paise, l.cgst_paise, l.sgst_paise, l.igst_paise "
+                    + "l.gst_rate_percent, l.taxable_paise, l.cgst_paise, l.sgst_paise, l.igst_paise, "
+                    + "'INVOICE' AS doc_kind "
                     + "FROM invoice_line l JOIN invoice i ON i.id = l.invoice_id "
                     + "UNION ALL "
                     + "SELECT c.credit_date, i.customer_gstin, l.item_id, l.item_name, l.hsn_code, -l.quantity, "
-                    + "l.gst_rate_percent, -l.taxable_paise, -l.cgst_paise, -l.sgst_paise, -l.igst_paise "
+                    + "l.gst_rate_percent, -l.taxable_paise, -l.cgst_paise, -l.sgst_paise, -l.igst_paise, "
+                    + "'CREDIT' AS doc_kind "
                     + "FROM invoice_line l JOIN credit_note c ON c.invoice_id = l.invoice_id "
                     + "JOIN invoice i ON i.id = l.invoice_id";
 
@@ -127,13 +129,16 @@ public class ReportService {
 
     /**
      * Outward supplies by customer type (B2B = customer has a GSTIN, B2C = no GSTIN) and GST rate.
-     * Laid out to map onto GSTR-1 (B2B / B2C tables) and GSTR-3B table 3.1(a): the TOTAL row is the
-     * outward taxable value and tax to report in 3B.
+     * Laid out to map onto GSTR-1 (B2B / B2C tables) and GSTR-3B table 3.1(a). Credit notes have their own
+     * rows ("B2B credit notes", "B2C credit notes", shown as negatives) so they are not hidden inside the sales
+     * rows, as GSTR-1 also lists them separately. The TOTAL row is the net outward taxable value and tax to
+     * report in 3B.
      */
     @Transactional(readOnly = true)
     public ReportTable gstSummary(ReportPeriod p) {
         List<List<Object>> rows = jdbc.query(
-                "SELECT CASE WHEN customer_gstin IS NOT NULL THEN 'B2B' ELSE 'B2C' END AS kind, "
+                "SELECT CASE WHEN customer_gstin IS NOT NULL THEN 'B2B' ELSE 'B2C' END "
+                        + "|| CASE WHEN doc_kind = 'CREDIT' THEN ' credit notes' ELSE '' END AS kind, "
                         + "gst_rate_percent AS rate, sum(taxable_paise) AS taxable, sum(cgst_paise) AS cgst, "
                         + "sum(sgst_paise) AS sgst, sum(igst_paise) AS igst "
                         + "FROM (" + SALES_LINES + ") d WHERE doc_date BETWEEN ? AND ? "
