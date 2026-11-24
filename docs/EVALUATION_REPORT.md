@@ -69,9 +69,11 @@ official benchmark values were never changed to make a test pass. The suite now 
 | M6 | Customers and suppliers could not be corrected or switched off | Edit and switch off/on screens, audited; old invoices keep their original details |
 | M9 | Credit notes were hidden inside the GST sales rows | Separate "credit notes" rows; the total is still the net figure |
 
-Still open (low impact): M7 overheads can only be entered when a run is created; M8 a returned order still shows
-"Dispatched" (its invoice shows Cancelled); M10 the invoice PDF's seller state text is fixed at Tamil Nadu (33);
-M11 pouch counts are not cross-checked against packets.
+| M7 | Overheads could only be entered when a run is created | By design: a posted run is never edited because its cost is in the append-only ledger. The run screen now says "reverse and record again", and a test proves the correction path |
+| M10 | Seller state on the invoice PDF was fixed at Tamil Nadu (33) | Seller name, GSTIN and state come from `app.seller.*` in application.yml (env vars APP_SELLER_*) |
+| M11 | Pouch counts were not cross-checked against packets | Pouches used must be at least good + damaged packets, otherwise the run is refused |
+
+All audit findings are now closed. M8 (returned orders still showing "Dispatched") is fixed with a "Returned" badge.
 
 ## Known limitations (honest list)
 - Recipes and pack configurations can be created from the screen but not edited afterwards.

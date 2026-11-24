@@ -46,4 +46,10 @@ public class BomService {
         return BomPlanner.plan(recipe.getBulkYieldGrams(), config.getPackSizeGrams(),
                 config.getPacketsPerCarton(), recipeSpecs, packSpecs, batchMultiplier);
     }
+
+    /** The packaging lines of a pack configuration (used to cross-check pouch counts against packets). */
+    @Transactional(readOnly = true)
+    public List<com.orderaudit.domain.PackLine> packLinesOf(long packConfigId) {
+        return packLines.findByPackConfigId(packConfigId);
+    }
 }

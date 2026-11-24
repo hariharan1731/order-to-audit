@@ -52,3 +52,8 @@
 
 **A test failed because of a flush. What was that?** The reports read with plain SQL, but inside one test transaction JPA had not yet written the change. The fix was in the test (flush first), not the app, because in the real app each request is its own transaction.
 
+**Overheads were wrong on a posted run. Why can't you just edit them?** The run's cost per packet is already in the stock ledger as the cost of the finished goods, and ledger rows are append-only. Editing the overhead would make the run disagree with its own stock movement. So you reverse the run (new reversal rows) and record it again with the right overheads. Nothing is deleted, and the audit log shows both steps.
+
+**What is the pouch check?** Every packet made, good or damaged, used one pouch. So the pouches recorded as used must be at least good packets plus damaged pouches. For the benchmark that is 188 + 6 = 194 pouches, exactly what the official run records. If someone types fewer, the run is refused with a message.
+
+**Where does the seller's name and state on the invoice come from?** From `app.seller.*` in application.yml (or the APP_SELLER_NAME, APP_SELLER_GSTIN and APP_SELLER_STATE environment variables). The demo values are Tamil Nadu (33), and a real business just sets its own.

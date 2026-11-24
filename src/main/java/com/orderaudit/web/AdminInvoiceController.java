@@ -25,6 +25,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/admin/invoices")
 public class AdminInvoiceController {
 
+    // Seller details printed on the invoice PDF; set app.seller.* in application.yml (or env vars) per deployment.
+    @org.springframework.beans.factory.annotation.Value("${app.seller.name:Murukku Foods (demo)}")
+    private String sellerName;
+    @org.springframework.beans.factory.annotation.Value("${app.seller.gstin:33AAAAA0000A1Z5}")
+    private String sellerGstin;
+    @org.springframework.beans.factory.annotation.Value("${app.seller.state:Tamil Nadu (33)}")
+    private String sellerState;
+
     private final InvoiceService invoices;
     private final CreditNoteService creditNotes;
     private final ReceivablesService receivables;
@@ -72,7 +80,8 @@ public class AdminInvoiceController {
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
-        byte[] bytes = com.orderaudit.report.InvoicePdfRenderer.render(invoice, invoices.linesOf(id));
+        byte[] bytes = com.orderaudit.report.InvoicePdfRenderer.render(invoice, invoices.linesOf(id),
+                new com.orderaudit.report.InvoicePdfRenderer.Seller(sellerName, sellerGstin, sellerState));
         String fileName = invoice.getInvoiceNumber().replace('/', '-') + ".pdf";
         return org.springframework.http.ResponseEntity.ok()
                 .contentType(org.springframework.http.MediaType.APPLICATION_PDF)

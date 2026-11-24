@@ -14,6 +14,7 @@ import com.orderaudit.domain.RunStatus;
 import com.orderaudit.domain.SourceType;
 import com.orderaudit.domain.StockMovement;
 import com.orderaudit.domain.Variance;
+import com.orderaudit.domain.PackBasis;
 import com.orderaudit.repository.PackConfigRepository;
 import com.orderaudit.repository.ProductionRunRepository;
 import com.orderaudit.repository.RecipeRepository;
@@ -160,6 +161,22 @@ public class ProductionService {
             Variance variance = VarianceCalculator.compute(line.plannedQuantity(), actualQty, tolerance);
             totalMaterial += lineCost;
             computed.add(new Costed(line, actualQty, unitCost, lineCost, variance));
+        }
+        // Every packet made (good or damaged) used up its per-packet packaging (the pouch), so the pouches
+        // actually used can never be fewer than good + damaged.
+        for (var packLine : bom.packLinesOf(packConfigId)) {
+            if (packLine.getBasis() != PackBasis.PER_PACKET) {
+                continue;
+            }
+            long required = Math.multiplyExact(actualGoodPackets + damagedPouches, packLine.getQuantity());
+            long used = actualByItem.getOrDefault(packLine.getItemId(),
+                    ordered.stream().filter(l -> l.itemId() == packLine.getItemId())
+                            .mapToLong(PlannedLine::plannedQuantity).sum());
+            if (used < required) {
+                throw new IllegalArgumentException("Packaging count does not add up: " + actualGoodPackets
+                        + " good packets + " + damagedPouches + " damaged pouches need at least " + required
+                        + " of the per-packet packaging item, but only " + used + " were recorded as used");
+            }
         }
         long totalOverhead = overheadList.stream().mapToLong(OverheadInput::amountPaise).sum();
         long totalCost = totalMaterial + totalOverhead;

@@ -43,6 +43,8 @@
   <form method="post" th:action="@{/production/runs/{id}/reverse(id=${run.summary.id})}"
         th:if="${run.summary.status.name() == 'POSTED'}">
     <button class="btn btn-outline-danger" id="reverse-run" type="submit">Reverse this run</button>
+    <div class="text-muted small mt-1" id="correction-hint">Posted runs are never edited, because their cost is already in the stock
+      ledger. To fix a wrong overhead or count, reverse this run and record it again with the right figures.</div>
   </form>
   <a class="btn btn-link" th:href="@{/production}">Back to runs</a>
 </div>

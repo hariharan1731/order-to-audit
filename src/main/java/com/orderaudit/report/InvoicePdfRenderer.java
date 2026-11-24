@@ -28,6 +28,13 @@ public final class InvoicePdfRenderer {
     static final String SELLER_GSTIN = "33AAAAA0000A1Z5";
     static final String SELLER_STATE = "Tamil Nadu (33)";
 
+    /** Who is selling. Deployments set this in application.yml (app.seller.*); these defaults are the demo values. */
+    public record Seller(String name, String gstin, String state) {
+        public static Seller demo() {
+            return new Seller(SELLER_NAME, SELLER_GSTIN, SELLER_STATE);
+        }
+    }
+
     private static final Font TITLE = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
     private static final Font BOLD = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
     private static final Font NORMAL = FontFactory.getFont(FontFactory.HELVETICA, 9);
@@ -36,6 +43,10 @@ public final class InvoicePdfRenderer {
     }
 
     public static byte[] render(Invoice invoice, List<InvoiceLine> lines) {
+        return render(invoice, lines, Seller.demo());
+    }
+
+    public static byte[] render(Invoice invoice, List<InvoiceLine> lines, Seller seller) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 36, 36, 36, 36);
         try {
@@ -47,7 +58,7 @@ public final class InvoicePdfRenderer {
 
             PdfPTable parties = new PdfPTable(2);
             parties.setWidthPercentage(100);
-            parties.addCell(partyCell("Supplier", SELLER_NAME, "GSTIN: " + SELLER_GSTIN, "State: " + SELLER_STATE));
+            parties.addCell(partyCell("Supplier", seller.name(), "GSTIN: " + seller.gstin(), "State: " + seller.state()));
             parties.addCell(partyCell("Bill to", invoice.getCustomerName(),
                     "GSTIN: " + (invoice.getCustomerGstin() == null ? "unregistered" : invoice.getCustomerGstin()),
                     "State: " + invoice.getCustomerState()));
