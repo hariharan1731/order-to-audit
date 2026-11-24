@@ -53,6 +53,7 @@ public class PurchaseService {
         if (purchaseDate == null) {
             throw new IllegalArgumentException("Purchase date is required");
         }
+        DateRules.notInFuture(purchaseDate, "Purchase date");
         if (reference != null && reference.length() > 60) {
             throw new IllegalArgumentException("Reference must be at most 60 characters");
         }

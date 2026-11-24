@@ -68,6 +68,7 @@ public class ReceivablesService {
         if (paymentDate == null || method == null) {
             throw new IllegalArgumentException("Payment date and method are required");
         }
+        DateRules.notInFuture(paymentDate, "Payment date");
         if (receivedBy == null || receivedBy.isBlank()) {
             throw new IllegalArgumentException("receivedBy is required");
         }
@@ -114,6 +115,10 @@ public class ReceivablesService {
             if (invoice.getStatus() != InvoiceStatus.ISSUED) {
                 throw new IllegalArgumentException("Invoice " + invoice.getInvoiceNumber() + " is " + invoice.getStatus());
             }
+            if (paymentDate.isBefore(invoice.getInvoiceDate())) {
+                throw new IllegalArgumentException("Payment date cannot be before invoice "
+                        + invoice.getInvoiceNumber() + " was raised (" + invoice.getInvoiceDate() + ")");
+            }
             long outstanding = outstandingOf(invoice);
             if (a.amountPaise() > outstanding) {
                 throw new IllegalArgumentException("Invoice " + invoice.getInvoiceNumber() + " has only "
@@ -142,6 +147,7 @@ public class ReceivablesService {
         if (reversalDate == null) {
             throw new IllegalArgumentException("Reversal date is required");
         }
+        DateRules.notInFuture(reversalDate, "Reversal date");
         if (reason == null || reason.isBlank() || reason.trim().length() > 200) {
             throw new IllegalArgumentException("A reason is required (at most 200 characters)");
         }

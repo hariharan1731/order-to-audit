@@ -86,6 +86,7 @@ public class ProductionService {
         if (runDate == null) {
             throw new IllegalArgumentException("Run date is required");
         }
+        DateRules.notInFuture(runDate, "Run date");
         if (batchMultiplier == null || batchMultiplier.signum() <= 0
                 || batchMultiplier.stripTrailingZeros().scale() > 4) {
             throw new IllegalArgumentException("Batch multiplier must be above zero with at most 4 decimals");
