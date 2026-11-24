@@ -16,10 +16,12 @@ public class StockAdjustmentService {
 
     private final StockAdjustmentRepository adjustments;
     private final StockService stock;
+    private final AuditService audit;
 
-    public StockAdjustmentService(StockAdjustmentRepository adjustments, StockService stock) {
+    public StockAdjustmentService(StockAdjustmentRepository adjustments, StockService stock, AuditService audit) {
         this.adjustments = adjustments;
         this.stock = stock;
+        this.audit = audit;
     }
 
     /** Opening stock: quantity must be positive. unitCostPaise may be null (unvalued). */
@@ -48,7 +50,12 @@ public class StockAdjustmentService {
             throw new IllegalArgumentException(type + " cannot have quantity " + quantitySigned);
         }
         StockAdjustment header = adjustments.save(new StockAdjustment(kind, cleanReason, postedBy));
-        return stock.post(itemId, type, quantitySigned, unitCostPaise,
+        StockMovement movement = stock.post(itemId, type, quantitySigned, unitCostPaise,
                 SourceType.STOCK_ADJUSTMENT, header.getId(), postedBy);
+        // Stock is the most sensitive number in the business: every manual change is also in the audit log.
+        audit.record(postedBy, kind == AdjustmentKind.OPENING ? "STOCK_OPENING_RECORDED" : "STOCK_ADJUSTED",
+                "STOCK_ADJUSTMENT", header.getId(),
+                "item " + itemId + ": " + (quantitySigned > 0 ? "+" : "") + quantitySigned + " base units. " + cleanReason);
+        return movement;
     }
 }

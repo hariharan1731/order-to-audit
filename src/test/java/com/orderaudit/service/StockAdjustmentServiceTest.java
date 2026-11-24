@@ -25,6 +25,7 @@ class StockAdjustmentServiceTest {
 
     @Mock StockAdjustmentRepository adjustments;
     @Mock StockService stock;
+    @Mock AuditService audit;
     @InjectMocks StockAdjustmentService service;
 
     /** The fake repository gives the saved header the id 9, as the database would. */

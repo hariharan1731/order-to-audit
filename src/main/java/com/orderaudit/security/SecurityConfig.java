@@ -23,6 +23,13 @@ public class SecurityConfig {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
+    /** Makes Spring Security announce sign-ins and failures as events, so LoginAuditListener can log them. */
+    @Bean
+    org.springframework.security.authentication.AuthenticationEventPublisher authenticationEventPublisher(
+            org.springframework.context.ApplicationEventPublisher publisher) {
+        return new org.springframework.security.authentication.DefaultAuthenticationEventPublisher(publisher);
+    }
+
     @Bean
     SecurityFilterChain webSecurity(HttpSecurity http) throws Exception {
         http
